@@ -3,128 +3,172 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0c1511">
+<meta name="theme-color" content="#141414">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Touchline · WC26</title>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<title>Ridgey's World Cup Predictor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=Saira+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
-  --pitch:#0c1511; --panel:#101d17; --line:#23392c; --chalk:#e9efe8;
-  --muted:#8da496; --amber:#e3a92e; --red:#c4574a; --green:#5fae7d;
+  --bg:#f2f2f2; --card:#ffffff; --ink:#1b1b1b; --ink2:#6a6a6a; --ink3:#9b9b9b;
+  --line:#e4e4e4; --line2:#d6d6d6; --accent:#ffd230; --black:#141414;
+  --home:#1a7d4b; --away:#1f6fb2; --draw:#b6b6b6; --hot:#b8860b;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html{background:var(--pitch)}
-body{background:var(--pitch);color:var(--chalk);
-  font-family:'IBM Plex Mono','SF Mono',Menlo,monospace;
-  font-size:13px;line-height:1.5;
-  padding:env(safe-area-inset-top) 0 calc(24px + env(safe-area-inset-bottom))}
-header{position:relative;overflow:hidden;border-bottom:1px solid var(--line);
-  padding:26px 18px 16px}
-header .arc{position:absolute;top:-1px;left:-1px;width:84px;height:84px;
-  border:1px solid var(--line);border-radius:0 0 100% 0;
-  border-top:none;border-left:none}
-header .arc::after{content:"";position:absolute;inset:18px 18px 0 0;
-  border:1px solid var(--line);border-radius:0 0 100% 0;
-  border-top:none;border-left:none}
-h1{font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-weight:600;
-  font-size:30px;letter-spacing:.06em;text-transform:uppercase}
-h1 span{color:var(--amber)}
-.sub{color:var(--muted);font-size:11px;margin-top:2px}
-.demo-tag{display:inline-block;border:1px solid var(--amber);color:var(--amber);
-  padding:1px 7px;font-size:10px;letter-spacing:.1em;margin-left:8px;vertical-align:2px}
-.controls{display:flex;gap:8px;padding:12px 18px;border-bottom:1px solid var(--line);
-  flex-wrap:wrap;align-items:center}
-button{font-family:inherit;font-size:12px;background:var(--panel);color:var(--chalk);
-  border:1px solid var(--line);padding:9px 14px;cursor:pointer;letter-spacing:.04em}
-button:active{background:var(--line)}
-button.primary{border-color:var(--green);color:var(--green)}
-button:disabled{opacity:.4}
-#status{flex-basis:100%;color:var(--muted);font-size:11px;min-height:16px}
-#status.err{color:var(--red)}
-.tabs{display:flex;border-bottom:1px solid var(--line)}
-.tabs button{flex:1;border:none;border-bottom:2px solid transparent;background:none;
-  padding:11px 0;color:var(--muted);font-family:'Barlow Condensed','Arial Narrow',sans-serif;
-  font-size:16px;letter-spacing:.12em;text-transform:uppercase}
-.tabs button.on{color:var(--chalk);border-bottom-color:var(--amber)}
-main{padding:16px 14px}
-.note{color:var(--muted);font-size:11px;margin-bottom:12px}
-#settings{display:none;padding:16px 18px;border-bottom:1px solid var(--line);background:var(--panel)}
+html{background:var(--bg)}
+body{background:var(--bg);color:var(--ink);
+  font-family:'Hanken Grotesk',system-ui,-apple-system,Arial,sans-serif;
+  font-size:15px;line-height:1.45;
+  padding:0 0 calc(28px + env(safe-area-inset-bottom))}
+.num{font-family:'Saira Condensed','Hanken Grotesk',sans-serif;font-variant-numeric:tabular-nums}
+
+/* masthead */
+header{background:var(--black);color:#fff;padding:calc(14px + env(safe-area-inset-top)) 16px 0}
+header .bar{display:flex;align-items:baseline;gap:10px}
+header .blocks{display:inline-flex;gap:2px}
+header .blocks i{width:15px;height:18px;background:#fff;display:block}
+h1{font-weight:800;font-size:19px;letter-spacing:-.01em;line-height:1}
+header .rule{height:4px;background:var(--accent);margin-top:12px}
+.demo-tag{display:inline-block;background:var(--accent);color:var(--black);font-weight:700;
+  padding:1px 6px;font-size:10px;letter-spacing:.04em;border-radius:2px;margin-left:6px}
+
+/* controls */
+.controls{background:var(--card);border-bottom:1px solid var(--line);
+  display:flex;gap:8px;padding:10px 12px;flex-wrap:wrap;align-items:center}
+button{font-family:inherit;font-size:13px;font-weight:600;background:#fff;color:var(--ink);
+  border:1px solid var(--line2);padding:8px 13px;border-radius:18px;cursor:pointer}
+button:active{background:#ececec}
+button.primary{background:var(--black);color:#fff;border-color:var(--black)}
+button:disabled{opacity:.45}
+#status{flex-basis:100%;color:var(--ink2);font-size:12px;min-height:15px}
+#status.err{color:#c0392b}
+
+/* settings */
+#settings{display:none;background:var(--card);border-bottom:1px solid var(--line);padding:14px 16px}
 #settings.open{display:block}
-#settings label{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;
-  letter-spacing:.08em;margin:10px 0 4px}
-#settings input[type=text]{width:100%;background:var(--pitch);border:1px solid var(--line);
-  color:var(--chalk);padding:9px 10px;font-family:inherit;font-size:13px}
+#settings label{display:block;color:var(--ink2);font-size:12px;font-weight:600;margin:10px 0 4px}
+#settings input[type=text]{width:100%;background:#fff;border:1px solid var(--line2);
+  color:var(--ink);padding:9px 10px;font-family:inherit;font-size:14px;border-radius:6px}
 #settings .row{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
-#settings .hint{color:var(--muted);font-size:11px;margin-top:10px}
-#settings a{color:var(--green)}
-.toggle{display:flex;align-items:center;gap:8px;color:var(--chalk);font-size:12px;margin-top:10px}
-.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
-table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;white-space:nowrap}
-th,td{padding:7px 9px;text-align:right;border-bottom:1px solid var(--line)}
-th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:var(--pitch)}
-th{color:var(--muted);font-weight:400;font-size:10px;text-transform:uppercase;
-  letter-spacing:.06em;cursor:pointer;user-select:none}
-td.team{font-weight:600}
-.card{background:var(--panel);border:1px solid var(--line);padding:15px 15px 12px;
-  position:relative;overflow:hidden;margin-bottom:12px}
-.card .arc{position:absolute;top:0;right:0;width:36px;height:36px;border:1px solid var(--line);
-  border-radius:0 0 0 100%;border-top:none;border-right:none}
-.card h3{font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-size:19px;
-  font-weight:600;margin-bottom:1px}
-.card .when{color:var(--muted);font-size:10px;margin-bottom:10px}
-.bar{display:flex;height:8px;border:1px solid var(--line);margin:6px 0 4px}
-.bar i{display:block;height:100%}
-.bar .h{background:var(--green)}.bar .d{background:var(--muted)}.bar .a{background:var(--amber)}
-.legend{display:flex;justify-content:space-between;color:var(--muted);font-size:10px;
-  margin-bottom:10px;gap:6px}
-.score-pred{text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:26px;
-  letter-spacing:.04em;margin:4px 0 2px}
-.score-pred small{font-size:11px;color:var(--muted);letter-spacing:.06em;
-  font-family:'IBM Plex Mono',monospace;display:block;text-transform:uppercase}
-.pillrow{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin:8px 0 2px}
-.pill{border:1px solid var(--line);padding:3px 9px;font-size:11px;color:var(--muted)}
-.pill b{color:var(--chalk)}
-.metric{margin-top:9px;font-size:12px}
-.metric b{color:var(--chalk)}
-.lines{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px}
-.chip{border:1px solid var(--line);padding:2px 6px;font-size:10px;color:var(--muted)}
-.chip b{color:var(--chalk)}
-.chip.hot b{color:var(--amber)}
-.ref{color:var(--muted);font-size:10px;margin-top:8px;font-style:italic}
-.conf{font-size:10px;color:var(--muted);margin-top:8px}
-.conf b{color:var(--chalk)}
-.expand{margin-top:10px;border:none;background:none;color:var(--amber);
-  font-family:inherit;font-size:11px;letter-spacing:.06em;padding:4px 0;cursor:pointer}
-.preview{display:none;margin-top:10px;border-top:1px solid var(--line);padding-top:10px}
+#settings .hint{color:var(--ink2);font-size:12px;margin-top:10px;line-height:1.5}
+#settings a{color:#0a64c2;font-weight:600}
+.toggle{display:flex;align-items:center;gap:8px;color:var(--ink);font-size:13px;margin-top:10px}
+
+/* tabs */
+.tabs{display:flex;background:var(--card);border-bottom:1px solid var(--line);
+  position:sticky;top:0;z-index:5}
+.tabs button{flex:1;border:none;background:none;border-radius:0;padding:13px 0;
+  color:var(--ink2);font-weight:700;font-size:14px;border-bottom:3px solid transparent}
+.tabs button.on{color:var(--ink);border-bottom-color:var(--accent)}
+
+main{padding:14px 12px;max-width:760px;margin:0 auto}
+.note{color:var(--ink2);font-size:12.5px;margin-bottom:12px;line-height:1.5}
+.filter{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.filter select{flex:1;font-family:inherit;font-size:14px;font-weight:600;padding:9px 10px;
+  border:1px solid var(--line2);border-radius:6px;background:#fff;color:var(--ink)}
+
+/* match card */
+.match{background:var(--card);border:1px solid var(--line);border-radius:10px;
+  padding:14px 14px 12px;margin-bottom:12px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.comp{color:var(--ink2);font-size:11.5px;font-weight:600;margin-bottom:10px;
+  display:flex;align-items:center;gap:6px}
+.comp .live{display:inline-block;width:7px;height:7px;border-radius:50%;background:#c0392b;
+  animation:blink 1.4s infinite}
+.hero{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:6px}
+.side{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
+.crest{width:38px;height:38px;border-radius:50%;object-fit:contain;background:#f4f4f4;
+  border:1px solid var(--line);display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:14px;color:var(--ink2)}
+.tname{font-weight:700;font-size:13.5px;line-height:1.15}
+.pred{text-align:center;padding:0 6px}
+.pred .eyebrow{display:block;font-size:9.5px;font-weight:700;letter-spacing:.12em;
+  color:var(--ink3);text-transform:uppercase;margin-bottom:1px}
+.pred .nums{font-weight:800;font-size:42px;line-height:.9;letter-spacing:.02em}
+.pred .xgline{display:block;font-size:10.5px;color:var(--ink2);margin-top:3px;font-weight:600}
+
+/* win/draw/win */
+.wdl{margin-top:13px}
+.wdl .track{display:flex;height:7px;border-radius:4px;overflow:hidden;background:#eee}
+.wdl .track i{display:block}
+.wdl .h{background:var(--home)}.wdl .d{background:var(--draw)}.wdl .a{background:var(--away)}
+.wdl .key{display:flex;justify-content:space-between;margin-top:5px;font-size:11px;
+  color:var(--ink2);font-weight:600}
+.wdl .key b{color:var(--ink)}
+
+/* markets grid */
+.markets{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:12px}
+.mk{border:1px solid var(--line);border-radius:7px;padding:6px 4px;text-align:center}
+.mk .v{font-weight:800;font-size:16px}
+.mk .l{font-size:9.5px;color:var(--ink2);font-weight:600;text-transform:uppercase;
+  letter-spacing:.03em;margin-top:1px}
+.linesblock{margin-top:11px}
+.linesblock .h{font-size:11px;font-weight:700;color:var(--ink2);margin-bottom:4px}
+.lines{display:flex;gap:5px;flex-wrap:wrap}
+.chip{border:1px solid var(--line2);border-radius:13px;padding:3px 9px;font-size:11px;
+  color:var(--ink2);font-weight:600}
+.chip b{color:var(--ink)}
+.chip.hot{border-color:var(--accent);background:#fff9e0}.chip.hot b{color:var(--hot)}
+.ref{color:var(--ink2);font-size:11px;margin-top:9px}
+.conf{font-size:11px;color:var(--ink2);margin-top:8px}
+.conf b{color:var(--ink)}
+.conf .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;
+  vertical-align:0}
+.conf .high{background:var(--home)}.conf .medium{background:var(--accent)}.conf .low{background:#c0392b}
+
+.expand{margin-top:11px;width:100%;background:#f6f6f6;border:1px solid var(--line);
+  border-radius:7px;color:var(--ink);font-weight:700;font-size:12.5px;padding:9px}
+.preview{display:none;margin-top:11px}
 .preview.open{display:block}
-.cmp{margin:2px 0}
-.cmp .lab{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);
-  margin-bottom:2px}
-.cmp .lab .vh{color:var(--chalk)}.cmp .lab .va{color:var(--chalk)}
-.cmp .lab .name{text-transform:uppercase;letter-spacing:.06em;font-size:9px}
-.cmp .track{display:flex;height:6px;background:var(--pitch);border:1px solid var(--line)}
-.cmp .track .l{background:var(--green)}.cmp .track .r{background:var(--amber)}
-.cmp.section{margin-top:12px;color:var(--chalk);font-family:'Barlow Condensed',sans-serif;
-  font-size:14px;letter-spacing:.1em;text-transform:uppercase;border-bottom:1px solid var(--line);
-  padding-bottom:3px}
-.unavail{font-size:10px;color:var(--muted);margin-top:10px;font-style:italic;line-height:1.4}
-.live-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--red);
-  margin-right:6px;animation:blink 1.4s infinite}
-@keyframes blink{50%{opacity:.25}}
-.results li{list-style:none;border-bottom:1px solid var(--line);padding:9px 0}
-.results .score{font-weight:600;display:block}
-.results .det{color:var(--muted);font-size:11px}
-footer{padding:20px 18px 0;color:var(--muted);font-size:10px}
-@media(prefers-reduced-motion:reduce){.live-dot{animation:none}}
+.cmp{margin:5px 0}
+.cmp .lab{display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:3px}
+.cmp .lab .v{font-weight:700;color:var(--ink)}
+.cmp .lab .name{color:var(--ink2);font-weight:600;font-size:10px;text-transform:uppercase;
+  letter-spacing:.04em}
+.cmp .track{display:flex;height:6px;border-radius:3px;overflow:hidden;background:#eee}
+.cmp .track .l{background:var(--home)}.cmp .track .r{background:var(--away)}
+.cmp.section{margin-top:14px;font-weight:800;font-size:12px;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--ink);border-bottom:2px solid var(--line);padding-bottom:4px}
+.formline{font-size:12px;color:var(--ink2);margin:4px 0}
+.formline b{color:var(--ink)}
+.unavail{font-size:10.5px;color:var(--ink3);margin-top:11px;line-height:1.5;
+  border-top:1px dashed var(--line2);padding-top:8px}
+
+/* form table */
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;background:var(--card);
+  border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;white-space:nowrap}
+th,td{padding:8px 10px;text-align:right;border-bottom:1px solid var(--line);font-size:13px}
+th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:var(--card)}
+th{color:var(--ink2);font-weight:700;font-size:10.5px;text-transform:uppercase;
+  letter-spacing:.03em;cursor:pointer;user-select:none}
+tbody tr:nth-child(even){background:#fafafa}
+tbody tr:nth-child(even) td:first-child{background:#fafafa}
+td.team{font-weight:700}
+
+/* results */
+.results{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.results li{list-style:none;border-bottom:1px solid var(--line);padding:11px 13px;
+  display:flex;justify-content:space-between;align-items:center;gap:10px}
+.results li:last-child{border-bottom:none}
+.results .teams{font-weight:700;font-size:14px}
+.results .sc{font-weight:800;font-size:17px}
+.results .det{color:var(--ink2);font-size:11px;font-weight:600;margin-top:2px}
+
+footer{padding:18px 16px 0;color:var(--ink3);font-size:10.5px;line-height:1.5;
+  max-width:760px;margin:0 auto}
+@keyframes blink{50%{opacity:.3}}
+@media(prefers-reduced-motion:reduce){.comp .live{animation:none}}
 </style>
 </head>
 <body>
 
 <header>
-  <div class="arc"></div>
-  <h1>Touchline <span>/</span> WC26<span id="demoTag"></span></h1>
-  <div class="sub" id="headSub">Form · xG · predictions</div>
+  <div class="bar">
+    <span class="blocks"><i></i><i></i><i></i></span>
+    <h1>Ridgey's World Cup Predictor<span id="demoTag"></span></h1>
+  </div>
+  <div class="rule"></div>
 </header>
 
 <div class="controls">
@@ -140,21 +184,20 @@ footer{padding:20px 18px 0;color:var(--muted);font-size:10px}
          placeholder="paste your key from api-football.com">
   <div class="toggle">
     <input type="checkbox" id="paidPlan">
-    <label for="paidPlan" style="margin:0;text-transform:none;color:var(--chalk)">
-      Paid plan (faster — needed for the 2026 season)</label>
+    <label for="paidPlan" style="margin:0;color:var(--ink)">Paid plan (faster — needed for the 2026 season)</label>
   </div>
-  <label for="formN" style="margin-top:14px">Form window (games per team)</label>
+  <label for="formN">Form window (games per team)</label>
   <input type="text" id="formN" inputmode="numeric" value="10" style="width:90px">
   <div class="row">
-    <button id="btnSaveKey">Save</button>
+    <button id="btnSaveKey" class="primary">Save</button>
     <button id="btnDemo">Load demo data</button>
     <button id="btnClear">Clear stored data</button>
   </div>
   <div class="hint">
     Free key at <a href="https://www.api-football.com" target="_blank" rel="noopener">api-football.com</a>.
     The 2026 season needs a paid plan (~$19/mo). Your key and all data stay only on this device.
-    Predictions use each team's recent games across all competitions, so the first
-    update fetches more — it caches as it goes and resumes if interrupted.
+    Predictions use each team's recent games across all competitions; the first update fetches
+    more and caches as it goes.
   </div>
 </div>
 
@@ -166,78 +209,74 @@ footer{padding:20px 18px 0;color:var(--muted);font-size:10px}
 
 <main id="main"></main>
 
-<footer>Data: API-Football (api-sports.io) · form-weighted xG model, Poisson scoreline
-simulation, shrinkage toward baseline on thin samples · personal analysis tool — estimates,
-not certainties. If used near betting markets, treat as a second opinion and gamble responsibly.</footer>
+<footer>Ridgey's World Cup Predictor · data from API-Football (api-sports.io) ·
+form-weighted xG model with Poisson scoreline simulation · predictions are estimates, not
+certainties. If used near betting markets, treat as a second opinion and gamble responsibly.</footer>
 
 <script>
 /* =================================================================
    STORAGE
    ================================================================= */
 const S = {
-  get k(){ return localStorage.getItem('tl_key') || ''; },
-  set k(v){ localStorage.setItem('tl_key', v); },
-  get paid(){ return localStorage.getItem('tl_paid') === '1'; },
-  set paid(v){ localStorage.setItem('tl_paid', v ? '1' : '0'); },
-  get formN(){ return Math.max(3, Math.min(20, +(localStorage.getItem('tl_formN')||10))); },
-  set formN(v){ localStorage.setItem('tl_formN', String(v)); },
-  load(name, fb){ try{ return JSON.parse(localStorage.getItem(name)) ?? fb; }catch(e){ return fb; } },
-  save(name, v){ try{ localStorage.setItem(name, JSON.stringify(v)); }catch(e){} },
+  get k(){ return localStorage.getItem('tl_key')||''; },
+  set k(v){ localStorage.setItem('tl_key',v); },
+  get paid(){ return localStorage.getItem('tl_paid')==='1'; },
+  set paid(v){ localStorage.setItem('tl_paid',v?'1':'0'); },
+  get formN(){ return Math.max(3,Math.min(20,+(localStorage.getItem('tl_formN')||10))); },
+  set formN(v){ localStorage.setItem('tl_formN',String(v)); },
+  load(n,fb){ try{ return JSON.parse(localStorage.getItem(n))??fb; }catch(e){ return fb; } },
+  save(n,v){ try{ localStorage.setItem(n,JSON.stringify(v)); }catch(e){} },
 };
-let fixtures = S.load('tl_fixtures', []);        // WC fixtures (normalised)
-let statsWC = S.load('tl_stats', {});            // fixtureId -> [rowA,rowB]
-let statsForm = S.load('tl_form_stats', {});     // fixtureId -> [rowA,rowB] (non-WC)
-let form = S.load('tl_form', {});                // teamId -> {fetchedAt, games:[...]}
-let statsLive = {};                              // session-only in-play
-let demoMode = S.load('tl_demo', false);
-let tab = 'model';
-const openPreviews = new Set();
+let fixtures=S.load('tl_fixtures',[]);
+let statsWC=S.load('tl_stats',{});
+let statsForm=S.load('tl_form_stats',{});
+let form=S.load('tl_form',{});
+let statsLive={};
+let demoMode=S.load('tl_demo',false);
+let tab='model', teamFilter=0;
+const openPreviews=new Set();
 
-const FINISHED = new Set(['FT','AET','PEN']);
-const LIVE = new Set(['1H','HT','2H','ET','BT','P','LIVE','INT']);
-const CORNER_LINES = [7.5,8.5,9.5,10.5,11.5];
-const CARD_LINES = [2.5,3.5,4.5,5.5];
-const GOAL_LINES = [1.5,2.5,3.5];
-const BASE = 'https://v3.football.api-sports.io';
-const FORM_TTL = 12*3600*1000;   // refetch a team's form if older than 12h
-
-function statsCache(){ return Object.assign({}, statsWC, statsForm, statsLive); }
+const FINISHED=new Set(['FT','AET','PEN']);
+const LIVE=new Set(['1H','HT','2H','ET','BT','P','LIVE','INT']);
+const CORNER_LINES=[7.5,8.5,9.5,10.5,11.5];
+const CARD_LINES=[2.5,3.5,4.5,5.5];
+const GOAL_LINES=[1.5,2.5,3.5];
+const BASE='https://v3.football.api-sports.io';
+const FORM_TTL=12*3600*1000;
+function statsCache(){ return Object.assign({},statsWC,statsForm,statsLive); }
 
 /* =================================================================
    API
    ================================================================= */
-const sleep = ms => new Promise(r => setTimeout(r, ms));
-const reqDelay = () => S.paid ? 280 : 6500;
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const reqDelay=()=>S.paid?280:6500;
 async function api(path){
-  const r = await fetch(BASE + path, { headers:{'x-apisports-key': S.k} });
-  if(!r.ok) throw new Error('HTTP ' + r.status + ' from API');
-  const d = await r.json();
-  const e = d.errors;
-  const bad = Array.isArray(e) ? e.length
-            : (e && typeof e==='object') ? Object.values(e).some(v=>v) : false;
-  if(bad) throw new Error('API: ' + JSON.stringify(e));
-  return d.response || [];
+  const r=await fetch(BASE+path,{headers:{'x-apisports-key':S.k}});
+  if(!r.ok) throw new Error('HTTP '+r.status+' from API');
+  const d=await r.json(); const e=d.errors;
+  const bad=Array.isArray(e)?e.length:(e&&typeof e==='object')?Object.values(e).some(v=>v):false;
+  if(bad) throw new Error('API: '+JSON.stringify(e));
+  return d.response||[];
 }
 function normFixture(fx){
-  const f=fx.fixture, t=fx.teams, g=fx.goals;
+  const f=fx.fixture,t=fx.teams,g=fx.goals;
   return { id:f.id, kickoff:f.date, status:(f.status||{}).short,
     round:(fx.league||{}).round, league:(fx.league||{}).name||null,
     venue:(f.venue||{}).name||null, referee:f.referee||null,
-    homeId:t.home.id, homeName:t.home.name, awayId:t.away.id, awayName:t.away.name,
+    homeId:t.home.id, homeName:t.home.name, homeLogo:t.home.logo||null,
+    awayId:t.away.id, awayName:t.away.name, awayLogo:t.away.logo||null,
     hg:g.home, ag:g.away };
 }
-const STAT_MAP = {
-  'Ball Possession':'poss','expected_goals':'xg','Total Shots':'shots',
+const STAT_MAP={'Ball Possession':'poss','expected_goals':'xg','Total Shots':'shots',
   'Shots on Goal':'sot','Shots off Goal':'shots_off','Shots insidebox':'shots_in',
   'Shots outsidebox':'shots_out','Blocked Shots':'blocked','Corner Kicks':'corners',
   'Offsides':'offsides','Fouls':'fouls','Yellow Cards':'yellows','Red Cards':'reds',
   'Goalkeeper Saves':'saves','Total passes':'passes','Passes accurate':'passes_acc',
-  'Passes %':'pass_pct'
-};
-const STAT_KEYS = [...new Set(Object.values(STAT_MAP))];
+  'Passes %':'pass_pct'};
+const STAT_KEYS=[...new Set(Object.values(STAT_MAP))];
 function normStats(resp){
   return resp.map(entry=>{
-    const row={ teamId:(entry.team||{}).id, teamName:(entry.team||{}).name };
+    const row={teamId:(entry.team||{}).id,teamName:(entry.team||{}).name};
     STAT_KEYS.forEach(k=>row[k]=null);
     for(const s of entry.statistics||[]){
       const key=STAT_MAP[s.type]; if(!key) continue;
@@ -248,8 +287,16 @@ function normStats(resp){
   });
 }
 
+/* logos: remember from any fixture we see */
+let logos=S.load('tl_logos',{});
+function rememberLogos(list){
+  list.forEach(f=>{ if(f.homeLogo)logos[f.homeId]=f.homeLogo;
+    if(f.awayLogo)logos[f.awayId]=f.awayLogo; });
+  S.save('tl_logos',logos);
+}
+
 /* =================================================================
-   UPDATE FLOWS
+   UPDATE
    ================================================================= */
 function setStatus(m,err){ const el=document.getElementById('status');
   el.textContent=m; el.className=err?'err':''; }
@@ -262,23 +309,20 @@ async function update(){
   const delay=reqDelay();
   try{
     setStatus('Fetching World Cup fixtures…');
-    fixtures = (await api('/fixtures?league=1&season=2026')).map(normFixture);
-    S.save('tl_fixtures', fixtures);
+    fixtures=(await api('/fixtures?league=1&season=2026')).map(normFixture);
+    rememberLogos(fixtures); S.save('tl_fixtures',fixtures);
 
-    // WC match stats (finished, not yet stored)
-    const wcTodo = fixtures.filter(f=>FINISHED.has(f.status) && !(statsWC[f.id]||[]).length);
+    const wcTodo=fixtures.filter(f=>FINISHED.has(f.status)&&!(statsWC[f.id]||[]).length);
     for(let i=0;i<wcTodo.length;i++){
       setStatus(`World Cup match stats ${i+1}/${wcTodo.length}…`);
       await sleep(delay);
       statsWC[wcTodo[i].id]=normStats(await api('/fixtures/statistics?fixture='+wcTodo[i].id));
-      S.save('tl_stats', statsWC);
+      S.save('tl_stats',statsWC);
     }
 
-    // Form: each team appearing in any fixture, last N across all comps
     const teamIds=new Map();
-    fixtures.forEach(f=>{ teamIds.set(f.homeId,f.homeName); teamIds.set(f.awayId,f.awayName); });
-    const ids=[...teamIds.keys()];
-    const now=Date.now();
+    fixtures.forEach(f=>{teamIds.set(f.homeId,f.homeName);teamIds.set(f.awayId,f.awayName);});
+    const ids=[...teamIds.keys()]; const now=Date.now();
     const stale=ids.filter(id=>!form[id]||(now-(form[id].fetchedAt||0))>FORM_TTL);
     let done=0;
     for(const id of stale){
@@ -286,27 +330,26 @@ async function update(){
       setStatus(`Form ${done}/${stale.length} · ${teamIds.get(id)} — recent games…`);
       await sleep(delay);
       const last=(await api(`/fixtures?team=${id}&last=${S.formN}`)).map(normFixture);
+      rememberLogos(last);
       const games=[];
       for(const g of last){
         if(!FINISHED.has(g.status)) continue;
         const isHome=g.homeId===id;
-        games.push({ fixtureId:g.id, date:g.kickoff, referee:g.referee,
-          oppId:isHome?g.awayId:g.homeId, oppName:isHome?g.awayName:g.homeName,
-          venue:isHome?'H':'A', gf:isHome?g.hg:g.ag, ga:isHome?g.ag:g.hg });
-        // stats: reuse cache, else fetch
-        const have=statsWC[g.id]||statsForm[g.id];
-        if(!have){
+        games.push({fixtureId:g.id,date:g.kickoff,referee:g.referee,
+          oppId:isHome?g.awayId:g.homeId,oppName:isHome?g.awayName:g.homeName,
+          venue:isHome?'H':'A',gf:isHome?g.hg:g.ag,ga:isHome?g.ag:g.hg});
+        if(!(statsWC[g.id]||statsForm[g.id])){
           await sleep(delay);
           statsForm[g.id]=normStats(await api('/fixtures/statistics?fixture='+g.id));
         }
       }
-      form[id]={ fetchedAt:now, name:teamIds.get(id), games };
-      S.save('tl_form', form); S.save('tl_form_stats', statsForm);
+      form[id]={fetchedAt:now,name:teamIds.get(id),games};
+      S.save('tl_form',form); S.save('tl_form_stats',statsForm);
     }
     setStatus(`Updated · ${fixtures.length} fixtures · form for `+
       `${ids.filter(id=>form[id]).length}/${ids.length} teams · `+new Date().toLocaleTimeString());
   }catch(e){
-    setStatus(e.message+' — progress saved; resume by tapping Update again.',true);
+    setStatus(e.message+' — progress saved; tap Update again to resume.',true);
   }
   busy(false); render();
 }
@@ -320,7 +363,7 @@ async function liveNow(){
     if(!fx.length){ setStatus('No World Cup matches in play right now.'); }
     else{
       for(const raw of fx){
-        const f=normFixture(raw);
+        const f=normFixture(raw); rememberLogos([f]);
         const i=fixtures.findIndex(x=>x.id===f.id);
         if(i>=0) fixtures[i]=f; else fixtures.push(f);
         await sleep(reqDelay());
@@ -334,189 +377,105 @@ async function liveNow(){
 }
 
 /* =================================================================
-   MODEL
+   MODEL  (unchanged engine)
    ================================================================= */
 function pmf(lam,k){ if(lam<=0) return k===0?1:0;
   let p=Math.exp(-lam); for(let i=1;i<=k;i++) p*=lam/i; return p; }
 function over(lam,line){ let c=0; for(let k=0;k<=Math.floor(line);k++) c+=pmf(lam,k);
   return Math.max(0,1-c); }
-const refName = raw => (raw||'').split('(')[0].trim();
-
-// recency weights for i-th most recent game (0 = newest)
+const refName=raw=>(raw||'').split('(')[0].trim();
 function weights(n){ const w=[]; let s=0;
-  for(let i=0;i<n;i++){ const x=Math.pow(0.82,i); w.push(x); s+=x; }
-  return w.map(x=>x/s); }
+  for(let i=0;i<n;i++){ const x=Math.pow(0.82,i); w.push(x); s+=x; } return w.map(x=>x/s); }
 
-/* Build a recency-weighted profile for one team from its form games. */
 function profile(teamId){
   const f=form[teamId]; if(!f||!f.games||!f.games.length) return null;
-  const cache=statsCache();
-  const games=f.games.slice(0,S.formN);
-  const w=weights(games.length);
-  // metrics we average: goals + all stat keys, for & against
-  const acc={}, wsum={};
-  const METR=['goals',...STAT_KEYS];
-  let nXg=0, nStats=0, pts=0, won=0, drawn=0, lost=0;
+  const cache=statsCache(); const games=f.games.slice(0,S.formN); const w=weights(games.length);
+  const acc={},wsum={}; const METR=['goals',...STAT_KEYS];
+  let nXg=0,nStats=0,pts=0,won=0,drawn=0,lost=0;
   games.forEach((g,i)=>{
     const weight=w[i];
     if(g.gf>g.ga){won++;pts+=3;} else if(g.gf===g.ga){drawn++;pts+=1;} else lost++;
     const add=(key,vf,va)=>{
-      if(vf!=null){ acc[key+'_f']=(acc[key+'_f']||0)+weight*vf; wsum[key+'_f']=(wsum[key+'_f']||0)+weight; }
-      if(va!=null){ acc[key+'_a']=(acc[key+'_a']||0)+weight*va; wsum[key+'_a']=(wsum[key+'_a']||0)+weight; }
+      if(vf!=null){acc[key+'_f']=(acc[key+'_f']||0)+weight*vf;wsum[key+'_f']=(wsum[key+'_f']||0)+weight;}
+      if(va!=null){acc[key+'_a']=(acc[key+'_a']||0)+weight*va;wsum[key+'_a']=(wsum[key+'_a']||0)+weight;}
     };
     add('goals',g.gf,g.ga);
     const pair=cache[g.fixtureId];
-    if(pair&&pair.length){
-      nStats++;
-      const self=pair.find(r=>r.teamId===teamId);
-      const opp=pair.find(r=>r.teamId!==teamId);
-      if(self&&opp){
-        if(self.xg!=null) nXg++;
-        STAT_KEYS.forEach(key=>add(key,self[key],opp[key]));
-      }
+    if(pair&&pair.length){ nStats++;
+      const self=pair.find(r=>r.teamId===teamId), opp=pair.find(r=>r.teamId!==teamId);
+      if(self&&opp){ if(self.xg!=null) nXg++; STAT_KEYS.forEach(key=>add(key,self[key],opp[key])); }
     }
   });
-  const avg={};
-  METR.forEach(key=>{
+  const avg={}; METR.forEach(key=>{
     avg[key+'_f']=wsum[key+'_f']?acc[key+'_f']/wsum[key+'_f']:null;
-    avg[key+'_a']=wsum[key+'_a']?acc[key+'_a']/wsum[key+'_a']:null;
-  });
-  return { id:teamId, name:f.name, n:games.length, nStats, nXg,
-    won, drawn, lost, ppg:pts/games.length, avg };
+    avg[key+'_a']=wsum[key+'_a']?acc[key+'_a']/wsum[key+'_a']:null; });
+  return {id:teamId,name:f.name,n:games.length,nStats,nXg,won,drawn,lost,
+    ppg:pts/games.length,avg};
 }
-
-/* Tournament baselines from all profiles. */
 function baselines(profiles){
-  const keys=['goals',...STAT_KEYS]; const sum={}, cnt={};
-  Object.values(profiles).forEach(p=>{
-    if(!p) return;
-    keys.forEach(k=>{
-      ['_f','_a'].forEach(s=>{
-        const v=p.avg[k+s];
-        if(v!=null){ sum[k+s]=(sum[k+s]||0)+v; cnt[k+s]=(cnt[k+s]||0)+1; }
-      });
-    });
-  });
-  const base={};
-  keys.forEach(k=>['_f','_a'].forEach(s=>{
-    base[k+s]=cnt[k+s]?sum[k+s]/cnt[k+s]:null; }));
-  // single representative level per metric (mean of for & against means)
-  const lvl={};
-  keys.forEach(k=>{
-    const a=base[k+'_f'], b=base[k+'_a'];
-    lvl[k]=(a!=null&&b!=null)?(a+b)/2:(a??b??null);
-  });
-  return { base, lvl };
+  const keys=['goals',...STAT_KEYS]; const sum={},cnt={};
+  Object.values(profiles).forEach(p=>{ if(!p)return;
+    keys.forEach(k=>['_f','_a'].forEach(s=>{ const v=p.avg[k+s];
+      if(v!=null){sum[k+s]=(sum[k+s]||0)+v;cnt[k+s]=(cnt[k+s]||0)+1;} })); });
+  const base={}; keys.forEach(k=>['_f','_a'].forEach(s=>{ base[k+s]=cnt[k+s]?sum[k+s]/cnt[k+s]:null; }));
+  const lvl={}; keys.forEach(k=>{ const a=base[k+'_f'],b=base[k+'_a'];
+    lvl[k]=(a!=null&&b!=null)?(a+b)/2:(a??b??null); });
+  return {base,lvl};
 }
-
 function refMap(){
   const cache=statsCache(); const m={};
-  const consider=(fxId,ref)=>{
-    if(!ref) return; const pair=cache[fxId]; if(!pair||pair.length<2) return;
-    const y=pair.reduce((s,r)=>s+(r.yellows||0),0);
-    (m[refName(ref)]??=[]).push(y);
-  };
+  const consider=(fxId,ref)=>{ if(!ref)return; const pair=cache[fxId]; if(!pair||pair.length<2)return;
+    const y=pair.reduce((s,r)=>s+(r.yellows||0),0); (m[refName(ref)]??=[]).push(y); };
   fixtures.forEach(f=>consider(f.id,f.referee));
   Object.values(form).forEach(t=>(t.games||[]).forEach(g=>consider(g.fixtureId,g.referee)));
-  const out={}; for(const[n,a] of Object.entries(m))
-    out[n]={avg:a.reduce((x,y)=>x+y,0)/a.length, n:a.length};
+  const out={}; for(const[n,a]of Object.entries(m)) out[n]={avg:a.reduce((x,y)=>x+y,0)/a.length,n:a.length};
   return out;
 }
+function shrink(v,n,mean,K=2){ if(v==null)return mean; if(mean==null)return v; return (n*v+K*mean)/(n+K); }
+function expFor(A,B,key,lvl){ const mean=lvl[key]; if(mean==null)return null;
+  return (shrink(A.avg[key+'_f'],A.nStats,mean)+shrink(B.avg[key+'_a'],B.nStats,mean))/2; }
 
-function shrink(v,n,mean,K=2){ if(v==null) return mean; if(mean==null) return v;
-  return (n*v+K*mean)/(n+K); }
-
-/* Expected value of a metric for team A's "for" side in a match vs B,
-   blending A's attacking rate with B's conceding rate. */
-function expFor(A,B,key,lvl){
-  const mean=lvl[key]; if(mean==null) return null;
-  const af=shrink(A.avg[key+'_f'],A.nStats,mean);
-  const bagainst=shrink(B.avg[key+'_a'],B.nStats,mean);
-  return (af+bagainst)/2;
-}
-
-function predict(f, profiles, lvl, refs){
-  const A=profiles[f.homeId], B=profiles[f.awayId];
-  if(!A||!B) return null;
-
-  // --- expected goals: blend xG-based and goals-based strengths ---
-  const Lx=lvl.xg, Lg=lvl.goals||1.3;
-  function lambda(att,def){ // att=team, def=opponent
-    let parts=[], wts=[];
-    if(Lx){ // xG channel
-      const a=shrink(att.avg.xg_f,att.nXg,Lx)/Lx;
-      const d=shrink(def.avg.xg_a,def.nXg,Lx)/Lx;
-      parts.push(Lx*a*d); wts.push(0.65);
-    }
-    if(Lg){ // goals channel
-      const a=shrink(att.avg.goals_f,att.n,Lg)/Lg;
-      const d=shrink(def.avg.goals_a,def.n,Lg)/Lg;
-      parts.push(Lg*a*d); wts.push(0.35);
-    }
-    const ws=wts.reduce((x,y)=>x+y,0)||1;
-    return parts.reduce((s,p,i)=>s+p*wts[i],0)/ws;
-  }
-  const lamA=Math.max(0.1,lambda(A,B)), lamB=Math.max(0.1,lambda(B,A));
-
-  // scoreline matrix
+function predict(f,profiles,lvl,refs){
+  const A=profiles[f.homeId],B=profiles[f.awayId]; if(!A||!B) return null;
+  const Lx=lvl.xg,Lg=lvl.goals||1.3;
+  function lambda(att,def){ let parts=[],wts=[];
+    if(Lx){ parts.push(Lx*(shrink(att.avg.xg_f,att.nXg,Lx)/Lx)*(shrink(def.avg.xg_a,def.nXg,Lx)/Lx)); wts.push(0.65); }
+    if(Lg){ parts.push(Lg*(shrink(att.avg.goals_f,att.n,Lg)/Lg)*(shrink(def.avg.goals_a,def.n,Lg)/Lg)); wts.push(0.35); }
+    const ws=wts.reduce((x,y)=>x+y,0)||1; return parts.reduce((s,p,i)=>s+p*wts[i],0)/ws; }
+  const lamA=Math.max(0.1,lambda(A,B)),lamB=Math.max(0.1,lambda(B,A));
   let pa=0,pd=0,pb=0,o25=0,btts=0,best={p:0,i:0,j:0};
-  const goalOver={}; GOAL_LINES.forEach(l=>goalOver[l]=0);
-  for(let i=0;i<10;i++) for(let j=0;j<10;j++){
-    const p=pmf(lamA,i)*pmf(lamB,j);
-    if(i>j)pa+=p; else if(i===j)pd+=p; else pb+=p;
-    if(i+j>2)o25+=p;
-    if(i>0&&j>0)btts+=p;
-    GOAL_LINES.forEach(l=>{ if(i+j>l) goalOver[l]+=p; });
-    if(p>best.p) best={p,i,j};
-  }
+  for(let i=0;i<10;i++)for(let j=0;j<10;j++){ const p=pmf(lamA,i)*pmf(lamB,j);
+    if(i>j)pa+=p;else if(i===j)pd+=p;else pb+=p; if(i+j>2)o25+=p; if(i>0&&j>0)btts+=p;
+    if(p>best.p)best={p,i,j}; }
   const norm=pa+pd+pb; pa/=norm;pd/=norm;pb/=norm;
-
-  // corners
-  const cornF=expFor(A,B,'corners',lvl), cornA=expFor(B,A,'corners',lvl);
+  const cornF=expFor(A,B,'corners',lvl),cornA=expFor(B,A,'corners',lvl);
   const lamCorners=(cornF||0)+(cornA||0);
-  // cards (+ referee)
-  let cardF=expFor(A,B,'yellows',lvl), cardA=expFor(B,A,'yellows',lvl);
-  let lamCards=(cardF||0)+(cardA||0);
-  let refNote=null;
-  if(f.referee && lvl.yellows){
-    const r=refs[refName(f.referee)]; const tournMatch=2*lvl.yellows;
-    if(r&&tournMatch>0){
-      const factor=r.avg/tournMatch;
-      lamCards*=1+(factor-1)*(r.n/(r.n+2));
-      refNote=`${refName(f.referee)}: ${r.avg.toFixed(1)} yellows/game over ${r.n} match(es)`;
-    }
-  }
-  return { f, A, B, lamA, lamB, pa, pd, pb, o25, btts, best, goalOver,
-    lamCorners, corners:Object.fromEntries(CORNER_LINES.map(l=>[l,over(lamCorners,l)])),
-    lamCards, cards:Object.fromEntries(CARD_LINES.map(l=>[l,over(lamCards,l)])),
-    refNote,
-    exp:{
-      poss:[expFor(A,B,'poss',lvl),expFor(B,A,'poss',lvl)],
-      xg:[lamA,lamB],
+  let cardF=expFor(A,B,'yellows',lvl),cardA=expFor(B,A,'yellows',lvl);
+  let lamCards=(cardF||0)+(cardA||0); let refNote=null;
+  if(f.referee&&lvl.yellows){ const r=refs[refName(f.referee)]; const tm=2*lvl.yellows;
+    if(r&&tm>0){ const factor=r.avg/tm; lamCards*=1+(factor-1)*(r.n/(r.n+2));
+      refNote=`${refName(f.referee)}: ${r.avg.toFixed(1)} yellows/game over ${r.n} match(es)`; } }
+  return {f,A,B,lamA,lamB,pa,pd,pb,o25,btts,best,
+    lamCorners,corners:Object.fromEntries(CORNER_LINES.map(l=>[l,over(lamCorners,l)])),
+    lamCards,cards:Object.fromEntries(CARD_LINES.map(l=>[l,over(lamCards,l)])),refNote,
+    exp:{ poss:[expFor(A,B,'poss',lvl),expFor(B,A,'poss',lvl)], xg:[lamA,lamB],
       shots:[expFor(A,B,'shots',lvl),expFor(B,A,'shots',lvl)],
       sot:[expFor(A,B,'sot',lvl),expFor(B,A,'sot',lvl)],
       shots_in:[expFor(A,B,'shots_in',lvl),expFor(B,A,'shots_in',lvl)],
       shots_out:[expFor(A,B,'shots_out',lvl),expFor(B,A,'shots_out',lvl)],
       blocked:[expFor(A,B,'blocked',lvl),expFor(B,A,'blocked',lvl)],
-      corners:[cornF,cornA],
-      offsides:[expFor(A,B,'offsides',lvl),expFor(B,A,'offsides',lvl)],
+      corners:[cornF,cornA], offsides:[expFor(A,B,'offsides',lvl),expFor(B,A,'offsides',lvl)],
       saves:[expFor(A,B,'saves',lvl),expFor(B,A,'saves',lvl)],
-      fouls:[expFor(A,B,'fouls',lvl),expFor(B,A,'fouls',lvl)],
-      yellows:[cardF,cardA],
+      fouls:[expFor(A,B,'fouls',lvl),expFor(B,A,'fouls',lvl)], yellows:[cardF,cardA],
       passes:[expFor(A,B,'passes',lvl),expFor(B,A,'passes',lvl)],
-      pass_pct:[expFor(A,B,'pass_pct',lvl),expFor(B,A,'pass_pct',lvl)],
-    }
-  };
+      pass_pct:[expFor(A,B,'pass_pct',lvl),expFor(B,A,'pass_pct',lvl)] } };
 }
-
 function buildContext(){
-  const profiles={};
-  const ids=new Set();
+  const profiles={}; const ids=new Set();
   fixtures.forEach(f=>{ids.add(f.homeId);ids.add(f.awayId);});
   Object.keys(form).forEach(id=>ids.add(+id));
   ids.forEach(id=>profiles[id]=profile(id));
-  const {lvl}=baselines(profiles);
-  return { profiles, lvl, refs:refMap() };
+  return {profiles,lvl:baselines(profiles).lvl,refs:refMap()};
 }
 
 /* =================================================================
@@ -529,44 +488,37 @@ const f2=v=>v==null?'–':v.toFixed(2);
 function kick(f){ try{ const d=new Date(f.kickoff);
   return d.toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short'})+' · '+
     d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'}); }catch(e){ return f.kickoff||''; } }
+function initials(name){ return (name||'?').split(/\s+/).map(w=>w[0]).join('').slice(0,3).toUpperCase(); }
+function crest(id,name){ const url=logos[id];
+  return url?`<img class="crest" src="${esc(url)}" alt="" loading="lazy">`
+            :`<span class="crest">${esc(initials(name))}</span>`; }
 
 function render(){
   const ctx=buildContext();
   const profiled=Object.values(ctx.profiles).filter(Boolean).length;
   document.getElementById('demoTag').innerHTML=demoMode?'<span class="demo-tag">DEMO</span>':'';
-  document.getElementById('headSub').textContent=
-    `Form · xG · predictions — ${profiled} teams profiled`;
   const m=document.getElementById('main');
-  if(tab==='model') m.innerHTML=renderModel(ctx);
+  if(tab==='model'){ m.innerHTML=renderModel(ctx); wireFilter(); wirePreviews(); }
   else if(tab==='teams'){ m.innerHTML=renderTeams(ctx); wireSort(); }
   else m.innerHTML=renderResults();
-  if(tab==='model') wirePreviews();
 }
 
-function cmpRow(label,vh,va,fmt,invert){
+function cmpRow(label,vh,va,fmt){
   if(vh==null&&va==null) return '';
-  const a=vh==null?0:vh, b=va==null?0:va;
-  const tot=a+b; let lp=tot?a/tot*100:50, rp=100-lp;
-  return `<div class="cmp"><div class="lab">`+
-    `<span class="vh">${fmt(vh)}</span>`+
-    `<span class="name">${label}</span>`+
-    `<span class="va">${fmt(va)}</span></div>`+
+  const a=vh==null?0:vh,b=va==null?0:va,tot=a+b,lp=tot?a/tot*100:50;
+  return `<div class="cmp"><div class="lab"><span class="v">${fmt(vh)}</span>`+
+    `<span class="name">${label}</span><span class="v">${fmt(va)}</span></div>`+
     `<div class="track"><i class="l" style="width:${lp}%"></i>`+
-    `<i class="r" style="width:${rp}%"></i></div></div>`;
+    `<i class="r" style="width:${100-lp}%"></i></div></div>`;
 }
-
 function previewHTML(p){
-  const e=p.exp;
-  const pf=v=>v==null?'–':v.toFixed(1)+'%';
-  let h='<div class="preview" data-fx="'+p.f.id+'">';
-  h+=`<div class="cmp section">Form — last games</div>`;
-  h+=`<div class="metric">${esc(p.A.name)} `+
-     `<b>${p.A.won}-${p.A.drawn}-${p.A.lost}</b> · ${p.A.ppg.toFixed(2)} pts/game `+
-     `· ${p.A.n} games (${p.A.nXg} with xG)</div>`;
-  h+=`<div class="metric">${esc(p.B.name)} `+
-     `<b>${p.B.won}-${p.B.drawn}-${p.B.lost}</b> · ${p.B.ppg.toFixed(2)} pts/game `+
-     `· ${p.B.n} games (${p.B.nXg} with xG)</div>`;
-
+  const e=p.exp, pf=v=>v==null?'–':v.toFixed(0)+'%';
+  let h=`<div class="preview" data-fx="${p.f.id}">`;
+  h+=`<div class="cmp section">Recent form (last ${p.A.n>p.B.n?p.A.n:p.B.n})</div>`;
+  h+=`<div class="formline"><b>${esc(p.A.name)}</b> ${p.A.won}-${p.A.drawn}-${p.A.lost} · `+
+     `${p.A.ppg.toFixed(2)} pts/game · ${p.A.nXg} games with xG</div>`;
+  h+=`<div class="formline"><b>${esc(p.B.name)}</b> ${p.B.won}-${p.B.drawn}-${p.B.lost} · `+
+     `${p.B.ppg.toFixed(2)} pts/game · ${p.B.nXg} games with xG</div>`;
   h+=`<div class="cmp section">Expected match profile</div>`;
   h+=cmpRow('Possession',e.poss[0],e.poss[1],pf);
   h+=cmpRow('xG',e.xg[0],e.xg[1],f2);
@@ -582,141 +534,138 @@ function previewHTML(p){
   h+=cmpRow('Yellow cards',e.yellows[0],e.yellows[1],f1);
   h+=cmpRow('Total passes',e.passes[0],e.passes[1],v=>v==null?'–':Math.round(v));
   h+=cmpRow('Pass accuracy',e.pass_pct[0],e.pass_pct[1],pf);
-  h+=`<div class="unavail">Not available from this data feed (Opta-only): `+
-     `xA, xG split by open/set play, touches in box, aerial duels, tackles &amp; tackle-win %, `+
-     `clearances, crosses, long balls, forward/backward pass split. `+
-     `Shown values are recency-weighted form averages, not a forecast of one match's box score.</div>`;
-  h+='</div>';
+  h+=`<div class="unavail">Not in this data feed (Opta-only): xA, open/set-play xG split, `+
+     `touches in box, aerial duels, tackles &amp; tackle-win %, clearances, crosses, long balls, `+
+     `forward/backward pass split. Values above are recency-weighted form averages, not a forecast `+
+     `of a single match's box score.</div></div>`;
   return h;
 }
-
-function chipRow(lines,probs){
+function chips(lines,probs){
   return '<div class="lines">'+lines.map(l=>
     `<span class="chip${probs[l]>=.6?' hot':''}">o${l} <b>${pct(probs[l])}</b></span>`).join('')+'</div>';
 }
-
-function cardHTML(p, live){
+function cardHTML(p,live){
   const f=p.f;
-  const liveBit=live?'<span class="live-dot"></span>':'';
-  let liveLine='';
-  if(live){
-    const h=live.find(s=>s.teamId===f.homeId)||{}, a=live.find(s=>s.teamId===f.awayId)||{};
-    liveLine=`<div class="metric">In play <b>${f.hg??0}–${f.ag??0}</b>`+
-      ` · xG ${f2(h.xg)}–${f2(a.xg)} · shots ${h.shots??'–'}–${a.shots??'–'}`+
-      ` · corners ${h.corners??'–'}–${a.corners??'–'}</div>`;
-  }
+  const liveBit=live?'<span class="live"></span>LIVE · ':'';
   const conf=Math.min(p.A.nXg,p.B.nXg)>=4?'high':Math.min(p.A.nStats,p.B.nStats)>=3?'medium':'low';
-  return `<div class="card"><div class="arc"></div>
-    <h3>${liveBit}${esc(f.homeName)} v ${esc(f.awayName)}</h3>
-    <div class="when">${esc(kick(f))} · ${esc(f.round)}`+(f.venue?` · ${esc(f.venue)}`:'')+`</div>
-    <div class="bar"><i class="h" style="width:${p.pa*100}%"></i>`+
-    `<i class="d" style="width:${p.pd*100}%"></i><i class="a" style="width:${p.pb*100}%"></i></div>
-    <div class="legend"><span>${esc(f.homeName)} ${pct(p.pa)}</span>`+
-    `<span>Draw ${pct(p.pd)}</span><span>${esc(f.awayName)} ${pct(p.pb)}</span></div>
-    ${liveLine}
-    <div class="score-pred">${p.best.i}–${p.best.j}<small>most likely score · `+
-    `xG ${p.lamA.toFixed(2)}–${p.lamB.toFixed(2)}</small></div>
-    <div class="pillrow">
-      <span class="pill">Over 2.5 <b>${pct(p.o25)}</b></span>
-      <span class="pill">BTTS <b>${pct(p.btts)}</b></span>
-      <span class="pill">Corners <b>${p.lamCorners.toFixed(1)}</b></span>
-      <span class="pill">Cards <b>${p.lamCards.toFixed(1)}</b></span>
+  const exact=pct(p.best.p);
+  return `<article class="match">
+    <div class="comp">${liveBit}${esc(f.round)} · ${esc(kick(f))}`+(f.venue?` · ${esc(f.venue)}`:'')+`</div>
+    <div class="hero">
+      <div class="side">${crest(f.homeId,f.homeName)}<span class="tname">${esc(f.homeName)}</span></div>
+      <div class="pred"><span class="eyebrow">Predicted</span>
+        <span class="nums">${p.best.i}–${p.best.j}</span>
+        <span class="xgline">xG ${p.lamA.toFixed(2)} – ${p.lamB.toFixed(2)}</span></div>
+      <div class="side">${crest(f.awayId,f.awayName)}<span class="tname">${esc(f.awayName)}</span></div>
     </div>
-    <div class="metric">Corners over lines`+chipRow(CORNER_LINES,p.corners)+`</div>
-    <div class="metric">Yellow cards over lines`+chipRow(CARD_LINES,p.cards)+`</div>`+
+    <div class="wdl"><div class="track"><i class="h" style="width:${p.pa*100}%"></i>`+
+      `<i class="d" style="width:${p.pd*100}%"></i><i class="a" style="width:${p.pb*100}%"></i></div>
+      <div class="key"><span>${esc(f.homeName)} <b>${pct(p.pa)}</b></span>`+
+      `<span>Draw <b>${pct(p.pd)}</b></span><span><b>${pct(p.pb)}</b> ${esc(f.awayName)}</span></div></div>
+    <div class="markets">
+      <div class="mk"><div class="v">${exact}</div><div class="l">This score</div></div>
+      <div class="mk"><div class="v">${pct(p.o25)}</div><div class="l">Over 2.5</div></div>
+      <div class="mk"><div class="v">${pct(p.btts)}</div><div class="l">BTTS</div></div>
+      <div class="mk"><div class="v num">${p.lamCorners.toFixed(1)}</div><div class="l">Corners</div></div>
+    </div>
+    <div class="linesblock"><div class="h">Total corners</div>${chips(CORNER_LINES,p.corners)}</div>
+    <div class="linesblock"><div class="h">Total yellow cards (exp ${p.lamCards.toFixed(1)})</div>${chips(CARD_LINES,p.cards)}</div>`+
     (p.refNote?`<div class="ref">Referee · ${esc(p.refNote)}</div>`:'')+
-    `<div class="conf">Model confidence <b>${conf}</b> — based on `+
-    `${Math.min(p.A.nXg,p.B.nXg)} games with xG for the weaker-covered side.</div>
-    <button class="expand" data-fx="${f.id}">${openPreviews.has(f.id)?'Hide':'Match preview'} ▸</button>`+
+    `<div class="conf"><span class="dot ${conf}"></span>Confidence <b>${conf}</b> · `+
+    `${Math.min(p.A.nXg,p.B.nXg)} games with xG for the weaker-covered side</div>
+    <button class="expand" data-fx="${f.id}">${openPreviews.has(f.id)?'Hide analysis':'Match analysis'}</button>`+
     previewHTML(p).replace('class="preview"',`class="preview${openPreviews.has(f.id)?' open':''}"`)+
-    `</div>`;
+    `</article>`;
 }
-
+function teamOptions(upcoming){
+  const seen=new Map();
+  upcoming.forEach(f=>{ seen.set(f.homeId,f.homeName); seen.set(f.awayId,f.awayName); });
+  const opts=[...seen.entries()].sort((a,b)=>a[1].localeCompare(b[1]))
+    .map(([id,name])=>`<option value="${id}"${teamFilter===id?' selected':''}>${esc(name)}</option>`).join('');
+  return `<div class="filter"><select id="teamFilter">`+
+    `<option value="0"${teamFilter===0?' selected':''}>All upcoming fixtures</option>${opts}</select></div>`;
+}
 function renderModel(ctx){
   if(!fixtures.length)
-    return '<div class="note">No data yet. Add your API key in Settings and tap '+
-      'Update data — or load the demo to see how it works.</div>';
-  const upcoming=fixtures.filter(f=>f.status==='NS'||LIVE.has(f.status))
-    .sort((x,y)=>(x.kickoff||'').localeCompare(y.kickoff||'')).slice(0,16);
+    return '<div class="note">No data yet. Open Settings, add your API key and tap Update data — '+
+      'or Load demo data to see how it works.</div>';
+  let upcoming=fixtures.filter(f=>f.status==='NS'||LIVE.has(f.status))
+    .sort((x,y)=>(x.kickoff||'').localeCompare(y.kickoff||''));
+  const filterUI=teamOptions(upcoming);
+  if(teamFilter){
+    const next=upcoming.find(f=>f.homeId===teamFilter||f.awayId===teamFilter);
+    upcoming=next?[next]:[];
+  } else { upcoming=upcoming.slice(0,16); }
   const cards=upcoming.map(f=>{ const p=predict(f,ctx.profiles,ctx.lvl,ctx.refs);
     return p?cardHTML(p,statsLive[f.id]):''; }).filter(Boolean).join('');
-  return '<div class="note">Predicted result from each side\u2019s recency-weighted form '+
-    '(last '+S.formN+' games, all competitions). Expected goals drive the scoreline simulation; '+
-    'thin samples are shrunk toward the field average. Tap Match preview for the full comparison.'+
-    '</div>'+(cards||'<div class="note">No upcoming fixtures with enough form data yet — '+
-    'run Update so each team\u2019s recent games load.</div>');
+  const intro=teamFilter
+    ? '<div class="note">Next fixture and predicted score for the selected team.</div>'
+    : '<div class="note">Predicted scores from each side\u2019s recency-weighted form (last '+S.formN+
+      ' games). Pick a team to see just their next fixture.</div>';
+  return filterUI+intro+(cards||'<div class="note">No upcoming fixture with enough form data yet. '+
+    'Run Update so recent games load.</div>');
 }
-
 function renderTeams(ctx){
   const ps=Object.values(ctx.profiles).filter(Boolean).sort((a,b)=>b.ppg-a.ppg);
   if(!ps.length) return '<div class="note">No form data yet. Tap Update data.</div>';
-  const cols=['Team','Gms','W-D-L','PPG','xGF','xGA','Gls F','Gls A','Sh F','SOT F',
-    'Crn F','Crn A','Yel F','Poss%'];
+  const cols=['Team','Gms','W-D-L','PPG','xGF','xGA','Gls F','Gls A','Sh F','SOT F','Crn F','Crn A','Yel F','Poss%'];
   const head=cols.map((c,i)=>`<th data-col="${i}">${c}</th>`).join('');
   const rows=ps.map(p=>{const a=p.avg;
     return `<tr><td class="team">${esc(p.name)}</td><td>${p.n}</td>`+
     `<td>${p.won}-${p.drawn}-${p.lost}</td><td>${p.ppg.toFixed(2)}</td>`+
-    `<td>${f2(a.xg_f)}</td><td>${f2(a.xg_a)}</td>`+
-    `<td>${f1(a.goals_f)}</td><td>${f1(a.goals_a)}</td>`+
-    `<td>${f1(a.shots_f)}</td><td>${f1(a.sot_f)}</td>`+
-    `<td>${f1(a.corners_f)}</td><td>${f1(a.corners_a)}</td>`+
+    `<td>${f2(a.xg_f)}</td><td>${f2(a.xg_a)}</td><td>${f1(a.goals_f)}</td><td>${f1(a.goals_a)}</td>`+
+    `<td>${f1(a.shots_f)}</td><td>${f1(a.sot_f)}</td><td>${f1(a.corners_f)}</td><td>${f1(a.corners_a)}</td>`+
     `<td>${f1(a.yellows_f)}</td><td>${a.poss_f==null?'–':a.poss_f.toFixed(0)}</td></tr>`;}).join('');
   return '<div class="note">Recency-weighted averages over each team\u2019s last '+S.formN+
     ' games (all competitions). F = for, A = against. Tap a column to sort, swipe for more.</div>'+
     `<div class="scroll"><table><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>`;
 }
-
 function renderResults(){
-  const done=fixtures.filter(f=>FINISHED.has(f.status))
-    .sort((x,y)=>(y.kickoff||'').localeCompare(x.kickoff||''));
+  const done=fixtures.filter(f=>FINISHED.has(f.status)).sort((x,y)=>(y.kickoff||'').localeCompare(x.kickoff||''));
   if(!done.length) return '<div class="note">No completed World Cup matches yet.</div>';
   const cache=statsCache();
   return '<ul class="results">'+done.slice(0,40).map(f=>{
-    const pair=cache[f.id]; let xgLine='';
-    if(pair&&pair.length){
-      const h=pair.find(r=>r.teamId===f.homeId)||{}, a=pair.find(r=>r.teamId===f.awayId)||{};
-      if(h.xg!=null||a.xg!=null) xgLine=` · xG ${f2(h.xg)}–${f2(a.xg)}`;
-    }
-    return `<li><span class="score">${esc(f.homeName)} ${esc(f.hg)}–${esc(f.ag)} ${esc(f.awayName)}</span>`+
-      `<span class="det">${esc(kick(f))} · ${esc(f.round)}${xgLine}</span></li>`;
+    const pair=cache[f.id]; let xg='';
+    if(pair&&pair.length){ const h=pair.find(r=>r.teamId===f.homeId)||{},a=pair.find(r=>r.teamId===f.awayId)||{};
+      if(h.xg!=null||a.xg!=null) xg=` · xG ${f2(h.xg)}–${f2(a.xg)}`; }
+    return `<li><div><div class="teams">${esc(f.homeName)} v ${esc(f.awayName)}</div>`+
+      `<div class="det">${esc(kick(f))} · ${esc(f.round)}${xg}</div></div>`+
+      `<div class="sc num">${esc(f.hg)}–${esc(f.ag)}</div></li>`;
   }).join('')+'</ul>';
 }
-
 function wireSort(){
-  document.querySelectorAll('th[data-col]').forEach(th=>{
-    th.addEventListener('click',()=>{
-      const t=th.closest('table'),i=+th.dataset.col,asc=th.dataset.asc!=='1';
-      t.querySelectorAll('th').forEach(h=>h.dataset.asc='');
-      th.dataset.asc=asc?'1':'0';
-      const rows=[...t.tBodies[0].rows];
-      rows.sort((a,b)=>{const x=a.cells[i].textContent.trim(),y=b.cells[i].textContent.trim();
-        const nx=parseFloat(x),ny=parseFloat(y);
-        const c=(isNaN(nx)||isNaN(ny))?x.localeCompare(y):nx-ny; return asc?c:-c;});
-      rows.forEach(r=>t.tBodies[0].appendChild(r));
-    });
-  });
+  document.querySelectorAll('th[data-col]').forEach(th=>th.addEventListener('click',()=>{
+    const t=th.closest('table'),i=+th.dataset.col,asc=th.dataset.asc!=='1';
+    t.querySelectorAll('th').forEach(h=>h.dataset.asc=''); th.dataset.asc=asc?'1':'0';
+    const rows=[...t.tBodies[0].rows];
+    rows.sort((a,b)=>{const x=a.cells[i].textContent.trim(),y=b.cells[i].textContent.trim();
+      const nx=parseFloat(x),ny=parseFloat(y); const c=(isNaN(nx)||isNaN(ny))?x.localeCompare(y):nx-ny; return asc?c:-c;});
+    rows.forEach(r=>t.tBodies[0].appendChild(r));
+  }));
 }
 function wirePreviews(){
   document.querySelectorAll('.expand').forEach(b=>b.addEventListener('click',()=>{
-    const id=+b.dataset.fx;
-    const pv=b.parentElement.querySelector('.preview');
+    const id=+b.dataset.fx, pv=b.parentElement.querySelector('.preview');
     const open=pv.classList.toggle('open');
     if(open) openPreviews.add(id); else openPreviews.delete(id);
-    b.textContent=(open?'Hide':'Match preview')+' ▸';
+    b.textContent=open?'Hide analysis':'Match analysis';
   }));
+}
+function wireFilter(){
+  const sel=document.getElementById('teamFilter');
+  if(sel) sel.addEventListener('change',()=>{ teamFilter=+sel.value; render(); });
 }
 
 /* =================================================================
-   DEMO DATA (fictional results, real names; includes xG + form)
+   DEMO DATA
    ================================================================= */
 const DEMO_TEAMS={1:'South Korea',2:'Czechia',3:'Brazil',4:'England',5:'France',6:'Japan'};
 const DEMO_FIX=[
-  [8001,'2026-06-11T18:00:00Z','NS','Group E - 1','MetLife Stadium','M. Oliver (Demo)',1,2,null,null],
-  [8002,'2026-06-11T21:00:00Z','NS','Group F - 1','SoFi Stadium','D. Massa (Demo)',3,4,null,null],
-  [8003,'2026-06-12T18:00:00Z','NS','Group G - 1','AT&T Stadium','S. Marciniak (Demo)',5,6,null,null],
+  [8001,'2026-06-14T18:00:00Z','NS','Group E · Matchday 2','MetLife Stadium','M. Oliver (Demo)',1,2,null,null],
+  [8002,'2026-06-14T21:00:00Z','NS','Group F · Matchday 2','SoFi Stadium','D. Massa (Demo)',3,4,null,null],
+  [8003,'2026-06-15T18:00:00Z','NS','Group G · Matchday 2','AT&T Stadium','S. Marciniak (Demo)',5,6,null,null],
   [8004,'2026-06-08T18:00:00Z','FT','Friendly','—','M. Oliver (Demo)',4,6,2,1],
 ];
-// per-team last-6 form: [oppName, venue, gf, ga, xgF, xgA, poss, shots, sot, corners, yellows]
 const DEMO_FORM={
   1:[['Uruguay','A',2,1,1.84,0.81,61,15,6,4,1],['Ghana','H',3,0,2.40,0.55,64,18,8,7,2],
      ['Iran','A',1,1,1.20,1.30,55,11,4,5,1],['Qatar','H',2,0,1.95,0.60,63,14,5,6,1],
@@ -738,34 +687,30 @@ const DEMO_FORM={
      ['Iran','H',2,0,1.85,0.75,58,14,6,6,1],['Qatar','A',3,1,2.20,1.00,60,16,7,7,2]],
 };
 function loadDemo(){
+  logos={}; S.save('tl_logos',logos);
   fixtures=DEMO_FIX.map(([id,ko,st,rd,vn,rf,h,a,hg,ag])=>({id,kickoff:ko,status:st,round:rd,
-    league:'World Cup',venue:vn,referee:rf,homeId:h,homeName:DEMO_TEAMS[h],
-    awayId:a,awayName:DEMO_TEAMS[a],hg,ag}));
-  statsWC={}; statsForm={}; form={}; statsLive={};
-  let fid=70000;
-  for(const[id,games] of Object.entries(DEMO_FORM)){
+    league:'World Cup',venue:vn,referee:rf,homeId:h,homeName:DEMO_TEAMS[h],homeLogo:null,
+    awayId:a,awayName:DEMO_TEAMS[a],awayLogo:null,hg,ag}));
+  statsWC={};statsForm={};form={};statsLive={}; let fid=70000;
+  for(const[id,games]of Object.entries(DEMO_FORM)){
     const tid=+id; const arr=[];
-    games.forEach(g=>{
-      fid++;
-      const [opp,ven,gf,ga,xgf,xga,poss,shots,sot,corners,yel]=g;
+    games.forEach(g=>{ fid++;
+      const[opp,ven,gf,ga,xgf,xga,poss,shots,sot,corners,yel]=g;
       arr.push({fixtureId:fid,date:'2026-0'+(3+(fid%4))+'-10T18:00:00Z',referee:'M. Oliver (Demo)',
         oppId:9000+(fid%50),oppName:opp,venue:ven,gf,ga});
-      const mk=(tid_,x,sh,st,co,ye,po,gfh)=>{const r={teamId:tid_,teamName:''};
-        STAT_KEYS.forEach(k=>r[k]=null);
+      const mk=(tid_,x,sh,st,co,ye,po)=>{const r={teamId:tid_,teamName:''};STAT_KEYS.forEach(k=>r[k]=null);
         r.xg=x;r.shots=sh;r.sot=st;r.corners=co;r.yellows=ye;r.poss=po;
-        r.shots_in=Math.round(sh*0.6);r.shots_out=sh-Math.round(sh*0.6);
-        r.shots_off=sh-st;r.blocked=Math.max(0,sh-st-2);r.offsides=2;r.fouls=11;
-        r.saves=3;r.passes=Math.round(po*8);r.passes_acc=Math.round(po*8*0.85);
-        r.pass_pct=85;return r;};
+        r.shots_in=Math.round(sh*0.6);r.shots_out=sh-Math.round(sh*0.6);r.shots_off=sh-st;
+        r.blocked=Math.max(0,sh-st-2);r.offsides=2;r.fouls=11;r.saves=3;
+        r.passes=Math.round(po*8);r.passes_acc=Math.round(po*8*0.85);r.pass_pct=85;return r;};
       statsForm[fid]=[mk(tid,xgf,shots,sot,corners,yel,poss),
-                      mk(9000+(fid%50),xga,Math.max(5,shots-4),Math.max(2,sot-2),
-                         Math.max(3,corners-1),1,100-poss)];
+        mk(9000+(fid%50),xga,Math.max(5,shots-4),Math.max(2,sot-2),Math.max(3,corners-1),1,100-poss)];
     });
     form[tid]={fetchedAt:Date.now(),name:DEMO_TEAMS[tid],games:arr};
   }
   demoMode=true; S.save('tl_demo',true);
   setStatus('Demo data loaded — fictional form, real team names, synthetic xG.');
-  render();
+  teamFilter=0; render();
 }
 
 /* =================================================================
@@ -779,13 +724,12 @@ document.getElementById('btnSaveKey').onclick=()=>{
   S.formN=+document.getElementById('formN').value||10;
   document.getElementById('formN').value=S.formN;
   setStatus(S.k?'Saved on this device.':'Key cleared.');
-  document.getElementById('settings').classList.remove('open');
-  render();
+  document.getElementById('settings').classList.remove('open'); render();
 };
 document.getElementById('btnDemo').onclick=loadDemo;
 document.getElementById('btnClear').onclick=()=>{
-  ['tl_fixtures','tl_stats','tl_form_stats','tl_form','tl_demo'].forEach(k=>localStorage.removeItem(k));
-  fixtures=[];statsWC={};statsForm={};form={};statsLive={};demoMode=false;
+  ['tl_fixtures','tl_stats','tl_form_stats','tl_form','tl_demo','tl_logos'].forEach(k=>localStorage.removeItem(k));
+  fixtures=[];statsWC={};statsForm={};form={};statsLive={};logos={};demoMode=false;teamFilter=0;
   setStatus('Stored data cleared (key kept).'); render();
 };
 document.getElementById('btnUpdate').onclick=update;
@@ -794,7 +738,6 @@ document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));
   tab=b.dataset.tab; render();
 });
-
 document.getElementById('keyInput').value=S.k;
 document.getElementById('paidPlan').checked=S.paid;
 document.getElementById('formN').value=S.formN;

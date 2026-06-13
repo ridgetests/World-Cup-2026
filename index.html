@@ -132,7 +132,18 @@ main{padding:14px 12px;max-width:760px;margin:0 auto}
 .unavail{font-size:10.5px;color:var(--ink3);margin-top:11px;line-height:1.5;
   border-top:1px dashed var(--line2);padding-top:8px}
 
-/* form view — mobile cards */
+/* glossary */
+#glossary{display:none;background:var(--card);border-bottom:1px solid var(--line);padding:14px 16px}
+#glossary.open{display:block}
+#glossary h4{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink2);
+  font-weight:800;margin:16px 0 7px;border-bottom:2px solid var(--accent);padding-bottom:4px;display:inline-block}
+#glossary h4:first-child{margin-top:0}
+#glossary dl{display:grid;grid-template-columns:minmax(74px,auto) 1fr;gap:6px 12px;margin-top:2px}
+#glossary dt{font-weight:800;font-size:12.5px}
+#glossary dd{font-size:12.5px;color:var(--ink2);line-height:1.42}
+#glossary .hint{margin-top:12px}
+.subline{margin-top:6px;font-size:11px;color:var(--ink2);font-weight:600}
+.tcard .note-link{color:#0a64c2;font-weight:700;text-decoration:underline}
 .fsort{display:flex;align-items:center;gap:8px;margin-bottom:12px}
 .fsort span{font-size:12px;color:var(--ink2);font-weight:600;white-space:nowrap}
 .fsort select{flex:1;font-family:inherit;font-size:14px;font-weight:600;padding:9px 10px;
@@ -182,6 +193,7 @@ footer{padding:18px 16px 0;color:var(--ink3);font-size:10.5px;line-height:1.5;
   <button class="primary" id="btnUpdate">Update data</button>
   <button id="btnLive">Live now</button>
   <button id="btnSettings">Settings</button>
+  <button id="btnKey">Key</button>
   <div id="status"></div>
 </div>
 
@@ -206,6 +218,32 @@ footer{padding:18px 16px 0;color:var(--ink3);font-size:10.5px;line-height:1.5;
     Predictions use each team's recent games across all competitions; the first update fetches
     more and caches as it goes.
   </div>
+</div>
+
+<div id="glossary">
+  <h4>Form table</h4>
+  <dl>
+    <dt>PTS / GAME</dt><dd>Points per game in the form window — 3 for a win, 1 for a draw. A simple form rating; higher is better.</dd>
+    <dt>W-D-L</dt><dd>Wins, draws and losses across the games counted.</dd>
+    <dt>xG FOR</dt><dd>Expected goals created per game — the quality of chances a team makes. Higher means better chances.</dd>
+    <dt>xG AG</dt><dd>Expected goals conceded per game — the chances they let the opposition have. Lower is better.</dd>
+    <dt>xG DIFF</dt><dd>xG for minus xG against. Positive means a team creates more than it gives up — the single best form signal.</dd>
+    <dt>xG / SHOT</dt><dd>xG divided by shots — average chance quality. High means good openings, not just lots of long-range efforts.</dd>
+    <dt>GLS F / GLS A</dt><dd>Actual goals scored and conceded per game.</dd>
+    <dt>CRN F</dt><dd>Corners won per game.</dd>
+    <dt>POSS</dt><dd>Average share of possession.</dd>
+  </dl>
+  <h4>Predictions</h4>
+  <dl>
+    <dt>Predicted</dt><dd>The single most likely scoreline from the model. Football scores are spread out, so this is a best guess, not a lock.</dd>
+    <dt>xG (under score)</dt><dd>Each side's expected goals for this specific match — the engine behind the predicted score.</dd>
+    <dt>This score</dt><dd>The probability the exact predicted scoreline actually happens.</dd>
+    <dt>Over 2.5</dt><dd>Chance of three or more total goals in the match.</dd>
+    <dt>BTTS</dt><dd>Both teams to score.</dd>
+    <dt>Corners / Cards</dt><dd>Expected match totals. The o-lines show the chance of going over — e.g. o9.5 is the chance of 10 or more.</dd>
+    <dt>Confidence</dt><dd>How much xG-backed form data the prediction rests on. Low means thin evidence — read it with more caution.</dd>
+  </dl>
+  <div class="hint">All figures are recency-weighted averages from each team's recent games. Estimates, not certainties.</div>
 </div>
 
 <div class="tabs">
@@ -619,6 +657,16 @@ function renderTeams(ctx){
     xgf:p=>p.avg.xg_f, xga:p=>(p.avg.xg_a==null?null:-p.avg.xg_a),
     goals:p=>p.avg.goals_f, corners:p=>p.avg.corners_f,
     yellows:p=>(p.avg.yellows_f==null?null:-p.avg.yellows_f) };
+  // headline number shown top-right of each card = the metric being sorted on
+  const HEAD={
+    ppg:{v:p=>p.ppg, l:'PTS / GAME', f:v=>v.toFixed(2)},
+    xgdiff:{v:p=>((p.avg.xg_f||0)-(p.avg.xg_a||0)), l:'xG DIFF', f:v=>(v>=0?'+':'')+v.toFixed(2)},
+    xgf:{v:p=>p.avg.xg_f, l:'xG FOR', f:v=>v==null?'–':v.toFixed(2)},
+    xga:{v:p=>p.avg.xg_a, l:'xG AGAINST ↓', f:v=>v==null?'–':v.toFixed(2)},
+    goals:{v:p=>p.avg.goals_f, l:'GOALS / GAME', f:v=>v==null?'–':v.toFixed(1)},
+    corners:{v:p=>p.avg.corners_f, l:'CORNERS / GAME', f:v=>v==null?'–':v.toFixed(1)},
+    yellows:{v:p=>p.avg.yellows_f, l:'YELLOWS / GAME ↓', f:v=>v==null?'–':v.toFixed(1)} };
+  const head=HEAD[formSort]||HEAD.ppg;
   const key=sorters[formSort]||sorters.ppg;
   ps.sort((a,b)=>((key(b)??-1e9)-(key(a)??-1e9)));
   const opt=(v,l)=>`<option value="${v}"${formSort===v?' selected':''}>${l}</option>`;
@@ -631,10 +679,12 @@ function renderTeams(ctx){
     const perShot=(a.xg_f!=null&&a.shots_f)?(a.xg_f/a.shots_f):null;
     const tile=(v,l)=>`<div class="tile"><div class="tv num">${v}</div><div class="tl">${l}</div></div>`;
     const cr=crest(p.id,p.name).replace('class="crest"','class="crest sm"');
+    const sub=(formSort==='ppg'?'':`${p.ppg.toFixed(2)} PPG · `)+`${p.won}-${p.drawn}-${p.lost} · ${p.n} games`;
     return `<div class="tcard"><div class="top"><span class="rank num">${i+1}</span>${cr}`+
       `<span class="nm">${esc(p.name)}</span>`+
-      `<span class="ppgwrap"><span class="ppg num">${p.ppg.toFixed(2)}</span>`+
-      `<span class="wdl">PPG · ${p.won}-${p.drawn}-${p.lost}</span></span></div>`+
+      `<span class="ppgwrap"><span class="ppg num">${head.f(head.v(p))}</span>`+
+      `<span class="wdl">${head.l}</span></span></div>`+
+      `<div class="subline">${sub}</div>`+
       `<div class="tiles">`+
         tile(f2(a.xg_f),'xG for')+tile(f2(a.xg_a),'xG ag')+
         tile(xgdiff==null?'–':(xgdiff>=0?'+':'')+xgdiff.toFixed(2),'xG diff')+
@@ -644,9 +694,9 @@ function renderTeams(ctx){
         tile(a.poss_f==null?'–':a.poss_f.toFixed(0)+'%','Poss')+
       `</div></div>`;
   }).join('');
-  return '<div class="note">Recency-weighted averages over each team\u2019s last '+S.formN+
-    ' games (all competitions). xG difference and xG per shot are derived from the feed. '+
-    'Tap a team in Predictions to see their next fixture.</div>'+sortUI+cards;
+  return '<div class="note">The big number on each card is whatever you\u2019re sorting by, '+
+    'labelled beneath it. <a class="note-link" id="keyLink">What do these mean?</a> '+
+    'Averages are recency-weighted over each team\u2019s last '+S.formN+' games.</div>'+sortUI+cards;
 }
 function renderResults(){
   const done=fixtures.filter(f=>FINISHED.has(f.status)).sort((x,y)=>(y.kickoff||'').localeCompare(x.kickoff||''));
@@ -664,6 +714,11 @@ function renderResults(){
 function wireFormSort(){
   const s=document.getElementById('formSort');
   if(s) s.addEventListener('change',()=>{ formSort=s.value; render(); });
+  const kl=document.getElementById('keyLink');
+  if(kl) kl.addEventListener('click',()=>{
+    const g=document.getElementById('glossary'); g.classList.add('open');
+    g.scrollIntoView({behavior:'smooth',block:'start'});
+  });
 }
 function wirePreviews(){
   document.querySelectorAll('.expand').forEach(b=>b.addEventListener('click',()=>{
@@ -740,6 +795,7 @@ function loadDemo(){
    ================================================================= */
 function openSettings(){ document.getElementById('settings').classList.add('open'); }
 document.getElementById('btnSettings').onclick=()=>document.getElementById('settings').classList.toggle('open');
+document.getElementById('btnKey').onclick=()=>document.getElementById('glossary').classList.toggle('open');
 document.getElementById('btnSaveKey').onclick=()=>{
   S.k=document.getElementById('keyInput').value.trim();
   S.paid=document.getElementById('paidPlan').checked;

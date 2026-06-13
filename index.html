@@ -26,9 +26,7 @@ body{background:var(--bg);color:var(--ink);
 /* masthead */
 header{background:var(--black);color:#fff;padding:calc(14px + env(safe-area-inset-top)) 16px 0}
 header .bar{display:flex;align-items:baseline;gap:10px}
-header .blocks{display:inline-flex;gap:2px}
-header .blocks i{width:15px;height:18px;background:#fff;display:block}
-h1{font-weight:800;font-size:19px;letter-spacing:-.01em;line-height:1}
+h1{font-weight:800;font-size:18px;letter-spacing:.05em;line-height:1.1;text-transform:uppercase}
 header .rule{height:4px;background:var(--accent);margin-top:12px}
 .demo-tag{display:inline-block;background:var(--accent);color:var(--black);font-weight:700;
   padding:1px 6px;font-size:10px;letter-spacing:.04em;border-radius:2px;margin-left:6px}
@@ -134,17 +132,27 @@ main{padding:14px 12px;max-width:760px;margin:0 auto}
 .unavail{font-size:10.5px;color:var(--ink3);margin-top:11px;line-height:1.5;
   border-top:1px dashed var(--line2);padding-top:8px}
 
-/* form table */
-.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;background:var(--card);
-  border:1px solid var(--line);border-radius:10px}
-table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;white-space:nowrap}
-th,td{padding:8px 10px;text-align:right;border-bottom:1px solid var(--line);font-size:13px}
-th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:var(--card)}
-th{color:var(--ink2);font-weight:700;font-size:10.5px;text-transform:uppercase;
-  letter-spacing:.03em;cursor:pointer;user-select:none}
-tbody tr:nth-child(even){background:#fafafa}
-tbody tr:nth-child(even) td:first-child{background:#fafafa}
-td.team{font-weight:700}
+/* form view — mobile cards */
+.fsort{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.fsort span{font-size:12px;color:var(--ink2);font-weight:600;white-space:nowrap}
+.fsort select{flex:1;font-family:inherit;font-size:14px;font-weight:600;padding:9px 10px;
+  border:1px solid var(--line2);border-radius:6px;background:#fff;color:var(--ink)}
+.tcard{background:var(--card);border:1px solid var(--line);border-radius:10px;
+  padding:11px 12px;margin-bottom:10px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.tcard .top{display:flex;align-items:center;gap:9px}
+.tcard .rank{font-weight:800;font-size:15px;color:var(--ink3);min-width:20px;text-align:center}
+.tcard .nm{font-weight:700;font-size:15px;flex:1;line-height:1.1}
+.tcard .ppgwrap{text-align:right;line-height:1.15}
+.tcard .ppg{font-weight:800;font-size:16px}
+.tcard .wdl{display:block;color:var(--ink2);font-size:10.5px;font-weight:600}
+.crest.sm{width:26px;height:26px;font-size:11px}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}
+.tile{background:#fafafa;border:1px solid var(--line);border-radius:6px;padding:6px 3px;text-align:center}
+.tile .tv{font-weight:800;font-size:14px}
+.tile .tl{font-size:9px;color:var(--ink2);font-weight:600;text-transform:uppercase;
+  letter-spacing:.02em;margin-top:1px}
+@media(max-width:390px){.tiles{grid-template-columns:repeat(3,1fr)}
+  .markets{grid-template-columns:repeat(2,1fr)}}
 
 /* results */
 .results{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
@@ -165,8 +173,7 @@ footer{padding:18px 16px 0;color:var(--ink3);font-size:10.5px;line-height:1.5;
 
 <header>
   <div class="bar">
-    <span class="blocks"><i></i><i></i><i></i></span>
-    <h1>Ridgey's World Cup Predictor<span id="demoTag"></span></h1>
+    <h1>RIDGEY'S WORLD CUP PREDICTOR<span id="demoTag"></span></h1>
   </div>
   <div class="rule"></div>
 </header>
@@ -233,7 +240,7 @@ let statsForm=S.load('tl_form_stats',{});
 let form=S.load('tl_form',{});
 let statsLive={};
 let demoMode=S.load('tl_demo',false);
-let tab='model', teamFilter=0;
+let tab='model', teamFilter=0, formSort='ppg';
 const openPreviews=new Set();
 
 const FINISHED=new Set(['FT','AET','PEN']);
@@ -499,7 +506,7 @@ function render(){
   document.getElementById('demoTag').innerHTML=demoMode?'<span class="demo-tag">DEMO</span>':'';
   const m=document.getElementById('main');
   if(tab==='model'){ m.innerHTML=renderModel(ctx); wireFilter(); wirePreviews(); }
-  else if(tab==='teams'){ m.innerHTML=renderTeams(ctx); wireSort(); }
+  else if(tab==='teams'){ m.innerHTML=renderTeams(ctx); wireFormSort(); }
   else m.innerHTML=renderResults();
 }
 
@@ -606,19 +613,40 @@ function renderModel(ctx){
     'Run Update so recent games load.</div>');
 }
 function renderTeams(ctx){
-  const ps=Object.values(ctx.profiles).filter(Boolean).sort((a,b)=>b.ppg-a.ppg);
+  const ps=Object.values(ctx.profiles).filter(Boolean);
   if(!ps.length) return '<div class="note">No form data yet. Tap Update data.</div>';
-  const cols=['Team','Gms','W-D-L','PPG','xGF','xGA','Gls F','Gls A','Sh F','SOT F','Crn F','Crn A','Yel F','Poss%'];
-  const head=cols.map((c,i)=>`<th data-col="${i}">${c}</th>`).join('');
-  const rows=ps.map(p=>{const a=p.avg;
-    return `<tr><td class="team">${esc(p.name)}</td><td>${p.n}</td>`+
-    `<td>${p.won}-${p.drawn}-${p.lost}</td><td>${p.ppg.toFixed(2)}</td>`+
-    `<td>${f2(a.xg_f)}</td><td>${f2(a.xg_a)}</td><td>${f1(a.goals_f)}</td><td>${f1(a.goals_a)}</td>`+
-    `<td>${f1(a.shots_f)}</td><td>${f1(a.sot_f)}</td><td>${f1(a.corners_f)}</td><td>${f1(a.corners_a)}</td>`+
-    `<td>${f1(a.yellows_f)}</td><td>${a.poss_f==null?'–':a.poss_f.toFixed(0)}</td></tr>`;}).join('');
+  const sorters={ ppg:p=>p.ppg, xgdiff:p=>((p.avg.xg_f||0)-(p.avg.xg_a||0)),
+    xgf:p=>p.avg.xg_f, xga:p=>(p.avg.xg_a==null?null:-p.avg.xg_a),
+    goals:p=>p.avg.goals_f, corners:p=>p.avg.corners_f,
+    yellows:p=>(p.avg.yellows_f==null?null:-p.avg.yellows_f) };
+  const key=sorters[formSort]||sorters.ppg;
+  ps.sort((a,b)=>((key(b)??-1e9)-(key(a)??-1e9)));
+  const opt=(v,l)=>`<option value="${v}"${formSort===v?' selected':''}>${l}</option>`;
+  const sortUI=`<div class="fsort"><span>Sort by</span><select id="formSort">`+
+    opt('ppg','Points per game')+opt('xgdiff','xG difference')+opt('xgf','xG for')+
+    opt('xga','xG against (best)')+opt('goals','Goals for')+opt('corners','Corners for')+
+    opt('yellows','Fewest yellows')+`</select></div>`;
+  const cards=ps.map((p,i)=>{ const a=p.avg;
+    const xgdiff=(a.xg_f!=null&&a.xg_a!=null)?(a.xg_f-a.xg_a):null;
+    const perShot=(a.xg_f!=null&&a.shots_f)?(a.xg_f/a.shots_f):null;
+    const tile=(v,l)=>`<div class="tile"><div class="tv num">${v}</div><div class="tl">${l}</div></div>`;
+    const cr=crest(p.id,p.name).replace('class="crest"','class="crest sm"');
+    return `<div class="tcard"><div class="top"><span class="rank num">${i+1}</span>${cr}`+
+      `<span class="nm">${esc(p.name)}</span>`+
+      `<span class="ppgwrap"><span class="ppg num">${p.ppg.toFixed(2)}</span>`+
+      `<span class="wdl">PPG · ${p.won}-${p.drawn}-${p.lost}</span></span></div>`+
+      `<div class="tiles">`+
+        tile(f2(a.xg_f),'xG for')+tile(f2(a.xg_a),'xG ag')+
+        tile(xgdiff==null?'–':(xgdiff>=0?'+':'')+xgdiff.toFixed(2),'xG diff')+
+        tile(perShot==null?'–':perShot.toFixed(2),'xG/shot')+
+        tile(f1(a.goals_f),'Gls F')+tile(f1(a.goals_a),'Gls A')+
+        tile(f1(a.corners_f),'Crn F')+
+        tile(a.poss_f==null?'–':a.poss_f.toFixed(0)+'%','Poss')+
+      `</div></div>`;
+  }).join('');
   return '<div class="note">Recency-weighted averages over each team\u2019s last '+S.formN+
-    ' games (all competitions). F = for, A = against. Tap a column to sort, swipe for more.</div>'+
-    `<div class="scroll"><table><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>`;
+    ' games (all competitions). xG difference and xG per shot are derived from the feed. '+
+    'Tap a team in Predictions to see their next fixture.</div>'+sortUI+cards;
 }
 function renderResults(){
   const done=fixtures.filter(f=>FINISHED.has(f.status)).sort((x,y)=>(y.kickoff||'').localeCompare(x.kickoff||''));
@@ -633,15 +661,9 @@ function renderResults(){
       `<div class="sc num">${esc(f.hg)}–${esc(f.ag)}</div></li>`;
   }).join('')+'</ul>';
 }
-function wireSort(){
-  document.querySelectorAll('th[data-col]').forEach(th=>th.addEventListener('click',()=>{
-    const t=th.closest('table'),i=+th.dataset.col,asc=th.dataset.asc!=='1';
-    t.querySelectorAll('th').forEach(h=>h.dataset.asc=''); th.dataset.asc=asc?'1':'0';
-    const rows=[...t.tBodies[0].rows];
-    rows.sort((a,b)=>{const x=a.cells[i].textContent.trim(),y=b.cells[i].textContent.trim();
-      const nx=parseFloat(x),ny=parseFloat(y); const c=(isNaN(nx)||isNaN(ny))?x.localeCompare(y):nx-ny; return asc?c:-c;});
-    rows.forEach(r=>t.tBodies[0].appendChild(r));
-  }));
+function wireFormSort(){
+  const s=document.getElementById('formSort');
+  if(s) s.addEventListener('change',()=>{ formSort=s.value; render(); });
 }
 function wirePreviews(){
   document.querySelectorAll('.expand').forEach(b=>b.addEventListener('click',()=>{

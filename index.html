@@ -1,0 +1,621 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0c1511">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Touchline · WC26</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --pitch:#0c1511; --panel:#101d17; --line:#23392c; --chalk:#e9efe8;
+  --muted:#8da496; --amber:#e3a92e; --red:#c4574a; --green:#5fae7d;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{background:var(--pitch)}
+body{background:var(--pitch);color:var(--chalk);
+  font-family:'IBM Plex Mono','SF Mono',Menlo,monospace;
+  font-size:13px;line-height:1.5;
+  padding:env(safe-area-inset-top) 0 calc(24px + env(safe-area-inset-bottom))}
+header{position:relative;overflow:hidden;border-bottom:1px solid var(--line);
+  padding:26px 18px 16px}
+header .arc{position:absolute;top:-1px;left:-1px;width:84px;height:84px;
+  border:1px solid var(--line);border-radius:0 0 100% 0;
+  border-top:none;border-left:none}
+header .arc::after{content:"";position:absolute;inset:18px 18px 0 0;
+  border:1px solid var(--line);border-radius:0 0 100% 0;
+  border-top:none;border-left:none}
+h1{font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-weight:600;
+  font-size:30px;letter-spacing:.06em;text-transform:uppercase}
+h1 span{color:var(--amber)}
+.sub{color:var(--muted);font-size:11px;margin-top:2px}
+.demo-tag{display:inline-block;border:1px solid var(--amber);color:var(--amber);
+  padding:1px 7px;font-size:10px;letter-spacing:.1em;margin-left:8px;
+  vertical-align:2px}
+.controls{display:flex;gap:8px;padding:12px 18px;border-bottom:1px solid var(--line);
+  flex-wrap:wrap;align-items:center}
+button{font-family:inherit;font-size:12px;background:var(--panel);
+  color:var(--chalk);border:1px solid var(--line);padding:9px 14px;
+  cursor:pointer;letter-spacing:.04em}
+button:active{background:var(--line)}
+button.primary{border-color:var(--green);color:var(--green)}
+button:disabled{opacity:.4}
+#status{flex-basis:100%;color:var(--muted);font-size:11px;min-height:16px}
+#status.err{color:var(--red)}
+.tabs{display:flex;border-bottom:1px solid var(--line)}
+.tabs button{flex:1;border:none;border-bottom:2px solid transparent;
+  background:none;padding:11px 0;color:var(--muted);
+  font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-size:16px;
+  letter-spacing:.12em;text-transform:uppercase}
+.tabs button.on{color:var(--chalk);border-bottom-color:var(--amber)}
+main{padding:16px 14px}
+.note{color:var(--muted);font-size:11px;margin-bottom:12px}
+/* settings */
+#settings{display:none;padding:16px 18px;border-bottom:1px solid var(--line);
+  background:var(--panel)}
+#settings.open{display:block}
+#settings label{display:block;color:var(--muted);font-size:11px;
+  text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px}
+#settings input[type=text]{width:100%;background:var(--pitch);
+  border:1px solid var(--line);color:var(--chalk);padding:9px 10px;
+  font-family:inherit;font-size:13px}
+#settings .row{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+#settings .hint{color:var(--muted);font-size:11px;margin-top:10px}
+#settings a{color:var(--green)}
+.toggle{display:flex;align-items:center;gap:8px;color:var(--chalk);
+  font-size:12px;margin-top:10px}
+/* teams table */
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;
+  white-space:nowrap}
+th,td{padding:7px 9px;text-align:right;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left;position:sticky;left:0;
+  background:var(--pitch)}
+th{color:var(--muted);font-weight:400;font-size:10px;text-transform:uppercase;
+  letter-spacing:.06em;cursor:pointer;user-select:none}
+td.team{font-weight:600}
+/* prediction cards */
+.card{background:var(--panel);border:1px solid var(--line);
+  padding:15px 15px 12px;position:relative;overflow:hidden;margin-bottom:12px}
+.card .arc{position:absolute;top:0;right:0;width:36px;height:36px;
+  border:1px solid var(--line);border-radius:0 0 0 100%;
+  border-top:none;border-right:none}
+.card h3{font-family:'Barlow Condensed','Arial Narrow',sans-serif;
+  font-size:19px;font-weight:600;margin-bottom:1px}
+.card .when{color:var(--muted);font-size:10px;margin-bottom:10px}
+.bar{display:flex;height:8px;border:1px solid var(--line);margin:6px 0 4px}
+.bar i{display:block;height:100%}
+.bar .h{background:var(--green)}.bar .d{background:var(--muted)}
+.bar .a{background:var(--amber)}
+.legend{display:flex;justify-content:space-between;color:var(--muted);
+  font-size:10px;margin-bottom:10px;gap:6px}
+.metric{margin-top:9px;font-size:12px}
+.metric b{color:var(--chalk)}
+.lines{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px}
+.chip{border:1px solid var(--line);padding:2px 6px;font-size:10px;
+  color:var(--muted)}
+.chip b{color:var(--chalk)}
+.chip.hot b{color:var(--amber)}
+.ref{color:var(--muted);font-size:10px;margin-top:8px;font-style:italic}
+.live-dot{display:inline-block;width:7px;height:7px;border-radius:50%;
+  background:var(--red);margin-right:6px;animation:blink 1.4s infinite}
+@keyframes blink{50%{opacity:.25}}
+/* results */
+.results li{list-style:none;border-bottom:1px solid var(--line);padding:9px 0}
+.results .score{font-weight:600;display:block}
+.results .det{color:var(--muted);font-size:11px}
+footer{padding:20px 18px 0;color:var(--muted);font-size:10px}
+@media(prefers-reduced-motion:reduce){.live-dot{animation:none}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="arc"></div>
+  <h1>Touchline <span>/</span> WC26<span id="demoTag"></span></h1>
+  <div class="sub" id="headSub">Corners · shots · cards · results</div>
+</header>
+
+<div class="controls">
+  <button class="primary" id="btnUpdate">Update data</button>
+  <button id="btnLive">Live now</button>
+  <button id="btnSettings">Settings</button>
+  <div id="status"></div>
+</div>
+
+<div id="settings">
+  <label for="keyInput">API-Football key</label>
+  <input type="text" id="keyInput" autocomplete="off" autocapitalize="off"
+         spellcheck="false" placeholder="paste your key from api-football.com">
+  <div class="toggle">
+    <input type="checkbox" id="paidPlan">
+    <label for="paidPlan" style="margin:0;text-transform:none;color:var(--chalk)">
+      Paid plan (no wait between requests)</label>
+  </div>
+  <div class="row">
+    <button id="btnSaveKey">Save</button>
+    <button id="btnDemo">Load demo data</button>
+    <button id="btnClear">Clear stored data</button>
+  </div>
+  <div class="hint">
+    Free key at <a href="https://www.api-football.com" target="_blank"
+    rel="noopener">api-football.com</a> (100 requests/day — enough for a
+    daily update). Your key and all match data are stored only on this
+    device, never in this page's code.
+  </div>
+</div>
+
+<div class="tabs">
+  <button data-tab="model" class="on">Model</button>
+  <button data-tab="teams">Teams</button>
+  <button data-tab="results">Results</button>
+</div>
+
+<main id="main"></main>
+
+<footer>Data: API-Football (api-sports.io) · Poisson models with shrinkage
+(K=2) · personal analysis tool — estimates, not certainties. If used near
+betting markets, treat as a second opinion and gamble responsibly.</footer>
+
+<script>
+/* ================= storage ================= */
+const S = {
+  get k(){ return localStorage.getItem('tl_key') || ''; },
+  set k(v){ localStorage.setItem('tl_key', v); },
+  get paid(){ return localStorage.getItem('tl_paid') === '1'; },
+  set paid(v){ localStorage.setItem('tl_paid', v ? '1' : '0'); },
+  load(name, fallback){
+    try { return JSON.parse(localStorage.getItem(name)) ?? fallback; }
+    catch(e){ return fallback; }
+  },
+  save(name, v){ localStorage.setItem(name, JSON.stringify(v)); },
+};
+let fixtures = S.load('tl_fixtures', []);     // normalised fixtures
+let statsFinal = S.load('tl_stats', {});      // fixtureId -> [teamA, teamB]
+let statsLive = {};                           // session-only, in-play stats
+let demoMode = S.load('tl_demo', false);
+let tab = 'model';
+
+const FINISHED = new Set(['FT','AET','PEN']);
+const LIVE = new Set(['1H','HT','2H','ET','BT','P','LIVE','INT']);
+const CORNER_LINES = [7.5,8.5,9.5,10.5,11.5];
+const CARD_LINES = [2.5,3.5,4.5,5.5];
+const SHRINK_K = 2, BASE = 'https://v3.football.api-sports.io';
+
+/* ================= api ================= */
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+async function api(path){
+  const r = await fetch(BASE + path, { headers: {'x-apisports-key': S.k} });
+  if(!r.ok) throw new Error('HTTP ' + r.status + ' from API');
+  const d = await r.json();
+  const e = d.errors;
+  const bad = Array.isArray(e) ? e.length
+            : (e && typeof e === 'object') ? Object.values(e).some(v => v) : false;
+  if(bad) throw new Error('API: ' + JSON.stringify(e));
+  return d.response || [];
+}
+function normFixture(fx){
+  const f = fx.fixture, t = fx.teams, g = fx.goals;
+  return {
+    id: f.id, kickoff: f.date, status: (f.status||{}).short,
+    round: (fx.league||{}).round, venue: (f.venue||{}).name || null,
+    referee: f.referee || null,
+    homeId: t.home.id, homeName: t.home.name,
+    awayId: t.away.id, awayName: t.away.name,
+    hg: g.home, ag: g.away,
+  };
+}
+const STAT_MAP = {'Corner Kicks':'corners','Total Shots':'total_shots',
+  'Shots on Goal':'shots_on','Yellow Cards':'yellows','Red Cards':'reds',
+  'Fouls':'fouls','Ball Possession':'possession'};
+function normStats(resp){
+  return resp.map(entry => {
+    const row = { teamId: (entry.team||{}).id, teamName: (entry.team||{}).name,
+      corners:null,total_shots:null,shots_on:null,yellows:null,reds:null,
+      fouls:null,possession:null };
+    for(const s of entry.statistics || []){
+      const key = STAT_MAP[s.type];
+      if(!key) continue;
+      let v = s.value;
+      if(typeof v === 'string') v = v.replace('%','').trim();
+      const n = parseFloat(v);
+      row[key] = Number.isFinite(n) ? n : null;
+    }
+    return row;
+  });
+}
+
+/* ================= update flows ================= */
+function setStatus(msg, err){
+  const el = document.getElementById('status');
+  el.textContent = msg; el.className = err ? 'err' : '';
+}
+function busy(on){
+  document.getElementById('btnUpdate').disabled = on;
+  document.getElementById('btnLive').disabled = on;
+}
+async function update(){
+  if(!S.k){ openSettings(); setStatus('Add your API key first.', true); return; }
+  busy(true); demoMode = false; S.save('tl_demo', false);
+  const delay = S.paid ? 250 : 6500;
+  try{
+    setStatus('Fetching fixtures…');
+    const fx = await api('/fixtures?league=1&season=2026');
+    fixtures = fx.map(normFixture);
+    S.save('tl_fixtures', fixtures);
+
+    const todo = fixtures.filter(f =>
+      FINISHED.has(f.status) && !(statsFinal[f.id] || []).length);
+    for(let i = 0; i < todo.length; i++){
+      setStatus(`Fetching match stats ${i+1}/${todo.length}` +
+        (S.paid ? '' : ' (throttled for the free plan)') + '…');
+      await sleep(delay);
+      statsFinal[todo[i].id] = normStats(
+        await api('/fixtures/statistics?fixture=' + todo[i].id));
+      S.save('tl_stats', statsFinal);   // save as we go — resumable
+    }
+    setStatus(`Updated · ${fixtures.length} fixtures · ` +
+      `${Object.keys(statsFinal).length} matches with stats · ` +
+      new Date().toLocaleTimeString());
+  }catch(e){
+    setStatus(e.message + ' — progress saved; if this is the daily quota, ' +
+      'try again tomorrow.', true);
+  }
+  busy(false); render();
+}
+async function liveNow(){
+  if(!S.k){ openSettings(); setStatus('Add your API key first.', true); return; }
+  busy(true);
+  try{
+    setStatus('Checking matches in play…');
+    const fx = await api('/fixtures?league=1&live=all');
+    if(!fx.length){ setStatus('No World Cup matches in play right now.'); }
+    else{
+      for(const raw of fx){
+        const f = normFixture(raw);
+        const i = fixtures.findIndex(x => x.id === f.id);
+        if(i >= 0) fixtures[i] = f; else fixtures.push(f);
+        await sleep(S.paid ? 250 : 6500);
+        statsLive[f.id] = normStats(
+          await api('/fixtures/statistics?fixture=' + f.id));
+      }
+      S.save('tl_fixtures', fixtures);
+      setStatus(fx.length + ' match(es) in play — live stats loaded.');
+    }
+  }catch(e){ setStatus(e.message, true); }
+  busy(false); render();
+}
+
+/* ================= model (port of analyse.py) ================= */
+function pmf(lam, k){
+  if(lam <= 0) return k === 0 ? 1 : 0;
+  let p = Math.exp(-lam);
+  for(let i = 1; i <= k; i++) p *= lam / i;
+  return p;
+}
+function over(lam, line){
+  let cdf = 0;
+  for(let k = 0; k <= Math.floor(line); k++) cdf += pmf(lam, k);
+  return Math.max(0, 1 - cdf);
+}
+const shrink = (rate, n, mean) =>
+  rate == null ? mean : (n * rate + SHRINK_K * mean) / (n + SHRINK_K);
+const refName = raw => raw.split('(')[0].trim();
+
+const METRICS = ['corners','total_shots','shots_on','yellows','reds','fouls','goals'];
+
+function buildProfiles(){
+  const teams = {}, totals = {}, refCards = {};
+  METRICS.forEach(m => totals[m] = 0);
+  let games = 0;
+  const team = (id, name) => teams[id] ??= { id, name, played:0, won:0,
+    drawn:0, lost:0, f:{}, a:{} };
+
+  for(const f of fixtures){
+    if(!FINISHED.has(f.status)) continue;
+    const home = team(f.homeId, f.homeName), away = team(f.awayId, f.awayName);
+    const hg = f.hg ?? 0, ag = f.ag ?? 0;
+    for(const [t, gf, ga] of [[home,hg,ag],[away,ag,hg]]){
+      t.played++; t.f.goals = (t.f.goals||0) + gf; t.a.goals = (t.a.goals||0) + ga;
+    }
+    if(hg > ag){ home.won++; away.lost++; }
+    else if(hg < ag){ away.won++; home.lost++; }
+    else { home.drawn++; away.drawn++; }
+    games++; totals.goals += hg + ag;
+
+    const pair = statsFinal[f.id] || [];
+    const hs = pair.find(s => s.teamId === f.homeId);
+    const as = pair.find(s => s.teamId === f.awayId);
+    if(hs && as){
+      let matchYellows = 0;
+      for(const [mine, theirs, row] of [[home,away,hs],[away,home,as]]){
+        for(const m of ['corners','total_shots','shots_on','yellows','reds','fouls']){
+          const v = row[m];
+          if(v != null){
+            mine.f[m] = (mine.f[m]||0) + v;
+            theirs.a[m] = (theirs.a[m]||0) + v;
+            totals[m] += v;
+            if(m === 'yellows') matchYellows += v;
+          }
+        }
+      }
+      if(f.referee){
+        const n = refName(f.referee);
+        (refCards[n] ??= []).push(matchYellows);
+      }
+    }
+  }
+  const means = {};
+  METRICS.forEach(m => means[m] = games ? totals[m] / (2*games) : 0);
+  for(const t of Object.values(teams)){
+    t.rf = {}; t.ra = {};
+    METRICS.forEach(m => {
+      t.rf[m] = t.played ? (t.f[m]||0) / t.played : null;
+      t.ra[m] = t.played ? (t.a[m]||0) / t.played : null;
+    });
+  }
+  const refs = {};
+  for(const [n, arr] of Object.entries(refCards))
+    refs[n] = { avg: arr.reduce((a,b)=>a+b,0)/arr.length, n: arr.length };
+  return { teams, means, games, refs };
+}
+
+function predict(f, P){
+  const a = P.teams[f.homeId], b = P.teams[f.awayId];
+  if(!a || !b || !a.played || !b.played) return null;
+  const lam = (x, y, m) => {
+    const mean = P.means[m];
+    if(mean <= 0) return 0;
+    return (shrink(x.rf[m], x.played, mean) +
+            shrink(y.ra[m], y.played, mean)) / 2;
+  };
+  const mg = P.means.goals || 1.2;
+  const lamA = mg * (shrink(a.rf.goals,a.played,mg)/mg) *
+                    (shrink(b.ra.goals,b.played,mg)/mg);
+  const lamB = mg * (shrink(b.rf.goals,b.played,mg)/mg) *
+                    (shrink(a.ra.goals,a.played,mg)/mg);
+  let pa=0, pd=0, pb=0;
+  for(let i=0;i<9;i++) for(let j=0;j<9;j++){
+    const p = pmf(lamA,i)*pmf(lamB,j);
+    if(i>j) pa+=p; else if(i===j) pd+=p; else pb+=p;
+  }
+  const norm = pa+pd+pb; pa/=norm; pd/=norm; pb/=norm;
+
+  const lamCorners = lam(a,b,'corners') + lam(b,a,'corners');
+  let lamCards = lam(a,b,'yellows') + lam(b,a,'yellows');
+  let refNote = null;
+  if(f.referee && P.means.yellows > 0){
+    const r = P.refs[refName(f.referee)];
+    const tournAvg = 2 * P.means.yellows;
+    if(r && tournAvg > 0){
+      const factor = r.avg / tournAvg;
+      lamCards *= 1 + (factor - 1) * (r.n / (r.n + 2));
+      refNote = `${refName(f.referee)}: ${r.avg.toFixed(1)} yellows/game ` +
+                `over ${r.n} match(es)`;
+    }
+  }
+  return { f, pa, pd, pb, lamA, lamB, lamCorners,
+    corners: Object.fromEntries(CORNER_LINES.map(l=>[l, over(lamCorners,l)])),
+    lamCards,
+    cards: Object.fromEntries(CARD_LINES.map(l=>[l, over(lamCards,l)])),
+    refNote,
+    shots: [lam(a,b,'total_shots'), lam(b,a,'total_shots')],
+    sot: [lam(a,b,'shots_on'), lam(b,a,'shots_on')] };
+}
+
+/* ================= rendering ================= */
+const esc = s => String(s ?? '–').replace(/[&<>"]/g,
+  c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const pct = p => Math.round(p*100) + '%';
+const f1 = v => v == null ? '–' : v.toFixed(1);
+function kick(f){
+  try{
+    const d = new Date(f.kickoff);
+    return d.toLocaleDateString(undefined,{weekday:'short',day:'numeric',
+      month:'short'}) + ' · ' +
+      d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+  }catch(e){ return f.kickoff || ''; }
+}
+
+function render(){
+  const P = buildProfiles();
+  document.getElementById('demoTag').innerHTML =
+    demoMode ? '<span class="demo-tag">DEMO</span>' : '';
+  document.getElementById('headSub').textContent =
+    `Corners · shots · cards · results — ${P.games} matches analysed`;
+  const m = document.getElementById('main');
+  if(tab === 'model') m.innerHTML = renderModel(P);
+  else if(tab === 'teams') m.innerHTML = renderTeams(P);
+  else m.innerHTML = renderResults();
+  if(tab === 'teams') wireSort();
+}
+
+function chipRow(lines, probs){
+  return '<div class="lines">' + lines.map(l =>
+    `<span class="chip${probs[l] >= .6 ? ' hot' : ''}">o${l} ` +
+    `<b>${pct(probs[l])}</b></span>`).join('') + '</div>';
+}
+
+function cardHTML(p, liveStats){
+  const f = p.f;
+  const liveBit = liveStats ? '<span class="live-dot"></span>' : '';
+  let liveLine = '';
+  if(liveStats){
+    const h = liveStats.find(s=>s.teamId===f.homeId) || {};
+    const a = liveStats.find(s=>s.teamId===f.awayId) || {};
+    liveLine = `<div class="metric">In play <b>${f.hg ?? 0}–${f.ag ?? 0}</b>` +
+      ` · corners ${h.corners ?? '–'}–${a.corners ?? '–'}` +
+      ` · shots ${h.total_shots ?? '–'}–${a.total_shots ?? '–'}` +
+      ` · yellows ${h.yellows ?? '–'}–${a.yellows ?? '–'}</div>`;
+  }
+  return `<div class="card"><div class="arc"></div>
+    <h3>${liveBit}${esc(f.homeName)} v ${esc(f.awayName)}</h3>
+    <div class="when">${esc(kick(f))} · ${esc(f.round)}` +
+    (f.venue ? ` · ${esc(f.venue)}` : '') + `</div>
+    <div class="bar"><i class="h" style="width:${p.pa*100}%"></i>` +
+    `<i class="d" style="width:${p.pd*100}%"></i>` +
+    `<i class="a" style="width:${p.pb*100}%"></i></div>
+    <div class="legend"><span>${esc(f.homeName)} ${pct(p.pa)}</span>` +
+    `<span>Draw ${pct(p.pd)}</span><span>${esc(f.awayName)} ${pct(p.pb)}</span></div>` +
+    liveLine +
+    `<div class="metric">Expected goals <b>${p.lamA.toFixed(2)} – ${p.lamB.toFixed(2)}</b></div>
+    <div class="metric">Corners · expected total <b>${p.lamCorners.toFixed(1)}</b>` +
+    chipRow(CORNER_LINES, p.corners) + `</div>
+    <div class="metric">Yellow cards · expected total <b>${p.lamCards.toFixed(1)}</b>` +
+    chipRow(CARD_LINES, p.cards) + `</div>
+    <div class="metric">Shots <b>${p.shots[0].toFixed(1)} – ${p.shots[1].toFixed(1)}</b>
+      <span style="color:var(--muted)">(on target ${p.sot[0].toFixed(1)} – ` +
+      `${p.sot[1].toFixed(1)})</span></div>` +
+    (p.refNote ? `<div class="ref">Referee · ${esc(p.refNote)}</div>` : '') +
+    `</div>`;
+}
+
+function renderModel(P){
+  if(!fixtures.length)
+    return '<div class="note">No data yet. Add your API key in Settings and ' +
+      'tap Update data — or load the demo to see how it works.</div>';
+  const upcoming = fixtures
+    .filter(f => f.status === 'NS' || LIVE.has(f.status))
+    .sort((x,y) => (x.kickoff||'').localeCompare(y.kickoff||''))
+    .slice(0, 16);
+  const cards = upcoming.map(f => {
+    const p = predict(f, P);
+    return p ? cardHTML(p, statsLive[f.id]) : '';
+  }).filter(Boolean).join('');
+  return '<div class="note">Poisson models on tournament data, shrunk toward ' +
+    'the field average while samples are small. Estimates, not certainties.</div>' +
+    (cards || '<div class="note">No upcoming fixtures with enough data — ' +
+     'predictions appear once both teams have played.</div>');
+}
+
+function renderTeams(P){
+  const teams = Object.values(P.teams).sort((a,b)=>b.played-a.played);
+  if(!teams.length) return '<div class="note">No completed matches yet.</div>';
+  const cols = ['Team','P','W-D-L','Gls F','Gls A','Crn F','Crn A','Sht F',
+    'Sht A','SOT F','Yel F','Yel A','Fls F'];
+  const head = cols.map((c,i)=>`<th data-col="${i}">${c}</th>`).join('');
+  const rows = teams.map(t =>
+    `<tr><td class="team">${esc(t.name)}</td><td>${t.played}</td>` +
+    `<td>${t.won}-${t.drawn}-${t.lost}</td>` +
+    `<td>${f1(t.rf.goals)}</td><td>${f1(t.ra.goals)}</td>` +
+    `<td>${f1(t.rf.corners)}</td><td>${f1(t.ra.corners)}</td>` +
+    `<td>${f1(t.rf.total_shots)}</td><td>${f1(t.ra.total_shots)}</td>` +
+    `<td>${f1(t.rf.shots_on)}</td>` +
+    `<td>${f1(t.rf.yellows)}</td><td>${f1(t.ra.yellows)}</td>` +
+    `<td>${f1(t.rf.fouls)}</td></tr>`).join('');
+  return '<div class="note">Per-game averages. Tap a column to sort. ' +
+    'F = produced, A = conceded. Swipe sideways for more.</div>' +
+    `<div class="scroll"><table><thead><tr>${head}</tr></thead>` +
+    `<tbody>${rows}</tbody></table></div>`;
+}
+
+function renderResults(){
+  const done = fixtures.filter(f => FINISHED.has(f.status))
+    .sort((x,y) => (y.kickoff||'').localeCompare(x.kickoff||''));
+  if(!done.length) return '<div class="note">No completed matches yet.</div>';
+  return '<ul class="results">' + done.slice(0,40).map(f =>
+    `<li><span class="score">${esc(f.homeName)} ${esc(f.hg)}–${esc(f.ag)} ` +
+    `${esc(f.awayName)}</span>` +
+    `<span class="det">${esc(kick(f))} · ${esc(f.round)}</span></li>`)
+    .join('') + '</ul>';
+}
+
+function wireSort(){
+  document.querySelectorAll('th[data-col]').forEach(th => {
+    th.addEventListener('click', () => {
+      const t = th.closest('table'), i = +th.dataset.col,
+        asc = th.dataset.asc !== '1';
+      t.querySelectorAll('th').forEach(h => h.dataset.asc = '');
+      th.dataset.asc = asc ? '1' : '0';
+      const rows = [...t.tBodies[0].rows];
+      rows.sort((a,b) => {
+        const x = a.cells[i].textContent.trim(),
+              y = b.cells[i].textContent.trim();
+        const nx = parseFloat(x), ny = parseFloat(y);
+        const c = (isNaN(nx)||isNaN(ny)) ? x.localeCompare(y) : nx-ny;
+        return asc ? c : -c;
+      });
+      rows.forEach(r => t.tBodies[0].appendChild(r));
+    });
+  });
+}
+
+/* ================= demo data ================= */
+const DEMO_TEAMS = {1:'Mexico',2:'USA',3:'Canada',4:'England',
+  5:'France',6:'Brazil',7:'Argentina',8:'Spain'};
+const DEMO_FIXTURES = [
+  [9001,'2026-06-11T20:00:00Z','FT','Group A - 1','Estadio Azteca','A. Carter (Demo)',1,3,2,1],
+  [9002,'2026-06-12T00:00:00Z','FT','Group B - 1','SoFi Stadium','B. Keller (Demo)',2,4,1,1],
+  [9003,'2026-06-12T18:00:00Z','FT','Group C - 1','MetLife Stadium','C. Moreau (Demo)',5,7,0,2],
+  [9004,'2026-06-12T22:00:00Z','FT','Group D - 1','AT&T Stadium','A. Carter (Demo)',6,8,3,1],
+  [9005,'2026-06-16T18:00:00Z','FT','Group A - 2','BC Place','B. Keller (Demo)',3,2,0,2],
+  [9006,'2026-06-16T22:00:00Z','FT','Group B - 2','Estadio Azteca','C. Moreau (Demo)',4,1,2,0],
+  [9007,'2026-06-20T18:00:00Z','NS','Group C - 2','Hard Rock Stadium','A. Carter (Demo)',7,6,null,null],
+  [9008,'2026-06-20T22:00:00Z','NS','Group D - 2','Lumen Field','B. Keller (Demo)',8,5,null,null],
+  [9009,'2026-06-21T18:00:00Z','NS','Group A - 3','Estadio Azteca',null,1,2,null,null],
+  [9010,'2026-06-21T22:00:00Z','NS','Group B - 3','MetLife Stadium','C. Moreau (Demo)',4,3,null,null],
+];
+const DEMO_STATS = [
+  [9001,1,7,14,6,2,0,11,56],[9001,3,3,8,2,3,0,14,44],
+  [9002,2,5,11,4,1,0,9,47],[9002,4,6,13,5,2,0,10,53],
+  [9003,5,8,15,3,3,0,13,58],[9003,7,4,9,5,2,0,12,42],
+  [9004,6,9,18,8,1,0,8,61],[9004,8,5,10,3,2,1,15,39],
+  [9005,3,4,7,1,4,0,16,41],[9005,2,7,13,5,1,0,9,59],
+  [9006,4,8,16,7,1,0,7,60],[9006,1,3,6,2,3,0,13,40],
+];
+function loadDemo(){
+  fixtures = DEMO_FIXTURES.map(([id,ko,st,rd,vn,rf,h,a,hg,ag]) => ({
+    id, kickoff:ko, status:st, round:rd, venue:vn, referee:rf,
+    homeId:h, homeName:DEMO_TEAMS[h], awayId:a, awayName:DEMO_TEAMS[a],
+    hg, ag }));
+  statsFinal = {};
+  for(const [fid,t,c,sh,sot,y,r,fo,po] of DEMO_STATS){
+    (statsFinal[fid] ??= []).push({ teamId:t, teamName:DEMO_TEAMS[t],
+      corners:c, total_shots:sh, shots_on:sot, yellows:y, reds:r,
+      fouls:fo, possession:po });
+  }
+  statsLive = {}; demoMode = true;
+  S.save('tl_demo', true);
+  setStatus('Demo data loaded — fictional scorelines, real team names.');
+  render();
+}
+
+/* ================= wiring ================= */
+function openSettings(){
+  document.getElementById('settings').classList.add('open');
+}
+document.getElementById('btnSettings').onclick = () =>
+  document.getElementById('settings').classList.toggle('open');
+document.getElementById('btnSaveKey').onclick = () => {
+  S.k = document.getElementById('keyInput').value.trim();
+  S.paid = document.getElementById('paidPlan').checked;
+  setStatus(S.k ? 'Key saved on this device.' : 'Key cleared.');
+  document.getElementById('settings').classList.remove('open');
+};
+document.getElementById('btnDemo').onclick = loadDemo;
+document.getElementById('btnClear').onclick = () => {
+  ['tl_fixtures','tl_stats','tl_demo'].forEach(k => localStorage.removeItem(k));
+  fixtures = []; statsFinal = {}; statsLive = {}; demoMode = false;
+  setStatus('Stored match data cleared (key kept).');
+  render();
+};
+document.getElementById('btnUpdate').onclick = update;
+document.getElementById('btnLive').onclick = liveNow;
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.tabs button').forEach(x =>
+    x.classList.toggle('on', x === b));
+  tab = b.dataset.tab; render();
+});
+
+document.getElementById('keyInput').value = S.k;
+document.getElementById('paidPlan').checked = S.paid;
+if(!fixtures.length && !S.k){
+  openSettings();
+  setStatus('First run: add your API key, or load the demo.');
+}
+render();
+</script>
+</body>
+</html>

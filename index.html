@@ -328,7 +328,7 @@ function aggPlayer(it){const pl=it.player||{};const st=it.statistics||[];const s
     minutes:sum(x=>(x.games||{}).minutes),appearances:sum(x=>(x.games||{}).appearences),
     foulsDrawn:sum(x=>(x.fouls||{}).drawn),foulsComm:sum(x=>(x.fouls||{}).committed),
     yellows:sum(x=>(x.cards||{}).yellow),reds:sum(x=>(x.cards||{}).red),
-    penScored:sum(x=>(x.penalty||{}).scored),penWon:sum(x=>(x.penalty||{}).won),rating:rn?rs/rn:null};}
+    penScored:sum(x=>(x.penalty||{}).scored),penMissed:sum(x=>(x.penalty||{}).missed),penWon:sum(x=>(x.penalty||{}).won),rating:rn?rs/rn:null};}
 async function fetchSquad(id,delay){let page=1,total=1,out=[];
   while(page<=total&&page<=4){const d=await apiFull('/players?team='+id+'&season=2026&page='+page);
     total=(d.paging&&d.paging.total)||1;(d.response||[]).forEach(it=>out.push(aggPlayer(it)));page++;if(page<=total)await sleep(delay);}
@@ -389,6 +389,9 @@ async function liveNow(){
 /* ===================== MODEL ===================== */
 function pmf(lam,k){if(lam<=0)return k===0?1:0;let p=Math.exp(-lam);for(let i=1;i<=k;i++)p*=lam/i;return p;}
 function over(lam,line){let c=0;for(let k=0;k<=Math.floor(line);k++)c+=pmf(lam,k);return Math.max(0,1-c);}
+function nbOver(lam,line,disp){if(!(disp>1.0001)||lam<=0)return over(lam,line);   // negative binomial: var = disp×mean
+  const r=lam/(disp-1),p=r/(r+lam);let term=Math.pow(p,r),cdf=term;
+  for(let k=1;k<=Math.floor(line);k++){term*=(k+r-1)/k*(1-p);cdf+=term;}return Math.max(0,1-cdf);}
 const refName=raw=>(raw||'').split('(')[0].trim();
 const typeFactor=lg=>/friendly/i.test(lg||'')?0.5:1;
 function gameWeights(games){const w=games.map((g,i)=>Math.pow(0.82,i)*typeFactor(g.league));const s=w.reduce((a,b)=>a+b,0)||1;return w.map(x=>x/s);}
@@ -414,19 +417,25 @@ function pooledGames(){const cache=statsCache();const out=[];
       if(pair&&pair.length){const self=pair.find(r=>r.teamId===id),opp=pair.find(r=>r.teamId!==id);if(self)xgf=self.xg;if(opp)xga=opp.xg;}
       out.push({team:id,opp:g.oppId,w:w[i],xgf,xga,gf:g.gf,ga:g.ga});});});
   return out;}
-function solveRatings(games,fkey,akey){
+function solveRatings(games,fkey,akey,ratedSet,priors){
   const teams=new Set();games.forEach(g=>teams.add(g.team));
-  let sw=0,sv=0;games.forEach(g=>{const v=g[fkey];if(v!=null){sv+=g.w*v;sw+=g.w;}});
-  const mu=sw?sv/sw:0;if(mu<=0)return {att:{},def:{},mu:0,cnt:{}};
+  const W=g=>g.w*((ratedSet&&!ratedSet.has(g.opp))?0.35:1);   // heavily discount unrated-opponent games
+  let sw=0,sv=0;games.forEach(g=>{const v=g[fkey];if(v!=null){sv+=W(g)*v;sw+=W(g);}});
+  let mu=sw?sv/sw:0;if(mu<=0)return {att:{},def:{},mu:0,cnt:{}};
+  mu=Math.max(0.8,Math.min(2.0,mu));
+  const CL=x=>Math.max(0.65,Math.min(1.55,x));               // tighter bounds — no extreme ratings on thin data
   const att={},def={},cnt={};teams.forEach(t=>{att[t]=1;def[t]=1;cnt[t]=0;});games.forEach(g=>{cnt[g.team]=(cnt[g.team]||0)+1;});
-  for(let it=0;it<40;it++){const na={},nd={},wa={},wd={};
-    games.forEach(g=>{const dOpp=def[g.opp]??1,aOpp=att[g.opp]??1,vf=g[fkey],va=g[akey];
-      if(vf!=null){const exp=mu*dOpp;if(exp>0){na[g.team]=(na[g.team]||0)+g.w*(vf/exp);wa[g.team]=(wa[g.team]||0)+g.w;}}
-      if(va!=null){const exp=mu*aOpp;if(exp>0){nd[g.team]=(nd[g.team]||0)+g.w*(va/exp);wd[g.team]=(wd[g.team]||0)+g.w;}}});
-    teams.forEach(t=>{if(wa[t])att[t]=na[t]/wa[t];if(wd[t])def[t]=nd[t]/wd[t];});
-    const norm=o=>{const v=[...teams].map(t=>o[t]).filter(x=>x>0);const m=v.reduce((a,b)=>a+b,0)/(v.length||1);if(m>0)teams.forEach(t=>o[t]/=m);};
+  for(let it=0;it<30;it++){const na={},nd={},wa={},wd={};
+    games.forEach(g=>{const wg=W(g),dOpp=def[g.opp]??1,aOpp=att[g.opp]??1,vf=g[fkey],va=g[akey];
+      if(vf!=null){const exp=mu*dOpp;if(exp>0){na[g.team]=(na[g.team]||0)+wg*(vf/exp);wa[g.team]=(wa[g.team]||0)+wg;}}
+      if(va!=null){const exp=mu*aOpp;if(exp>0){nd[g.team]=(nd[g.team]||0)+wg*(va/exp);wd[g.team]=(wd[g.team]||0)+wg;}}});
+    teams.forEach(t=>{if(wa[t])att[t]=CL(na[t]/wa[t]);if(wd[t])def[t]=CL(nd[t]/wd[t]);});
+    const norm=o=>{const v=[...teams].map(t=>o[t]).filter(x=>x>0);const m=v.reduce((a,b)=>a+b,0)/(v.length||1);if(m>0)teams.forEach(t=>o[t]=CL(o[t]/m));};
     norm(att);norm(def);}
-  teams.forEach(t=>{const c=cnt[t]||0;att[t]=(c*att[t]+3)/(c+3);def[t]=(c*def[t]+3)/(c+3);});
+  // strong shrinkage toward average, weighted by how many games actually had this metric
+  const cM={};games.forEach(g=>{if(g[fkey]!=null)cM[g.team]=(cM[g.team]||0)+1;});
+  const K=8;teams.forEach(t=>{const c=cM[t]||0;const pr=(priors&&priors[t])||{att:1,def:1};
+    att[t]=CL((c*att[t]+K*pr.att)/(c+K));def[t]=CL((c*def[t]+K*pr.def)/(c+K));});
   return {att,def,mu,cnt};}
 function baselines(profiles){const keys=['goals',...STAT_KEYS];const sum={},c={};
   Object.values(profiles).forEach(p=>{if(!p)return;keys.forEach(k=>['_f','_a'].forEach(s=>{const v=p.avg[k+s];if(v!=null){sum[k+s]=(sum[k+s]||0)+v;c[k+s]=(c[k+s]||0)+1;}}));});
@@ -437,6 +446,22 @@ function refMap(){const cache=statsCache();const m={};
   fixtures.forEach(f=>consider(f.id,f.referee));Object.values(form).forEach(t=>(t.games||[]).forEach(g=>consider(g.fixtureId,g.referee)));
   const out={};for(const[n,a]of Object.entries(m))out[n]={avg:a.reduce((x,y)=>x+y,0)/a.length,n:a.length};return out;}
 function shrink(v,n,mean,K=2){if(v==null)return mean;if(mean==null)return v;return (n*v+K*mean)/(n+K);}
+/* Strength prior anchored to the official FIFA/Coca-Cola World Ranking (11 Jun 2026) — exact positions
+   for all 48 qualified nations. Position drives the anchor; non-WC opponents default to mid (~55).
+   Multiple name spellings included so it matches whatever the data feed returns. */
+const FIFA_RANK={
+  'argentina':1,'spain':2,'france':3,'england':4,'portugal':5,'brazil':6,'morocco':7,'netherlands':8,
+  'belgium':9,'germany':10,'croatia':11,'colombia':13,'mexico':14,'senegal':15,'uruguay':16,
+  'usa':17,'united states':17,'japan':18,'switzerland':19,'iran':20,'turkey':22,'turkiye':22,'türkiye':22,
+  'ecuador':23,'austria':24,'south korea':25,'korea republic':25,'australia':27,'algeria':28,'egypt':29,
+  'canada':30,'norway':31,'ivory coast':33,"cote d'ivoire":33,'panama':34,'sweden':38,'czechia':40,'czech republic':40,
+  'paraguay':41,'scotland':42,'tunisia':45,'dr congo':46,'congo dr':46,'democratic republic of congo':46,
+  'uzbekistan':50,'qatar':56,'iraq':57,'south africa':60,'saudi arabia':61,'jordan':63,
+  'bosnia and herzegovina':64,'bosnia & herzegovina':64,'bosnia':64,'cape verde':67,'cabo verde':67,'cape verde islands':67,
+  'ghana':74,'curacao':82,'curaçao':82,'haiti':83,'new zealand':85};
+function priorFor(name){const n=(name||'').toLowerCase().trim();const pos=FIFA_RANK[n]||55;
+  const s=Math.max(0,Math.min(1,1-Math.log(pos)/Math.log(120)));   // 1 = world #1, 0 = ~120th
+  return {att:0.80+0.62*s,def:1.26-0.54*s};}
 function expFor(A,B,key,lvl){const mean=lvl[key];if(mean==null)return null;return (shrink(A.avg[key+'_f'],A.nStats,mean)+shrink(B.avg[key+'_a'],B.nStats,mean))/2;}
 function tau(i,j,la,lb){if(i===0&&j===0)return 1-la*lb*RHO;if(i===0&&j===1)return 1+la*RHO;if(i===1&&j===0)return 1+lb*RHO;if(i===1&&j===1)return 1-RHO;return 1;}
 function injuryFactor(teamId){const sq=squads[teamId];if(!sq||!sq.players||!sq.players.length)return 1;
@@ -450,46 +475,59 @@ function squadModel(teamId,teamXG,refFactor){
   const shares=avail.map(p=>({p,w:0.7*per90(p.goals,p.minutes)+0.3*(per90(p.shots,p.minutes)*0.12)}));
   const tot=shares.reduce((s,x)=>s+x.w,0)||1;
   const scorers=shares.map(({p,w})=>{const eg=teamXG*w/tot;return {id:p.id,name:p.name,pos:p.pos,rating:p.rating,
-    eg,pScore:1-Math.exp(-eg),pen:(p.penScored+p.penWon)>0};}).sort((a,b)=>b.pScore-a.pScore);
+    eg,pScore:1-Math.exp(-eg),pen:((p.penScored||0)+(p.penMissed||0))>0};}).sort((a,b)=>b.pScore-a.pScore);
   const carded=avail.map(p=>{const rate=(per90(p.yellows,p.minutes)+0.04*per90(p.foulsComm,p.minutes))*(refFactor||1);
     return {id:p.id,name:p.name,pos:p.pos,pCard:1-Math.exp(-rate)};}).sort((a,b)=>b.pCard-a.pCard);
-  const pt=[...avail].sort((a,b)=>(b.penScored+b.penWon)-(a.penScored+a.penWon))[0];
-  return {scorers,carded,penTaker:(pt&&(pt.penScored+pt.penWon)>0)?pt:null,injuries:injuries[teamId]||[]};
+  const pk=p=>(p.penScored||0)+(p.penMissed||0);   // penalties actually taken — not won/drawn
+  const pt=[...avail].sort((a,b)=>pk(b)-pk(a))[0];
+  return {scorers,carded,penTaker:(pt&&pk(pt)>0)?pt:null,injuries:injuries[teamId]||[]};
 }
 function predict(f,ctx){
   const {profiles,ratX,ratG,lvl,refs}=ctx;const A=profiles[f.homeId],B=profiles[f.awayId];if(!A||!B)return null;
-  const parts=[],wts=[],partsB=[],wtsB=[];
-  if(ratX.mu>0){parts.push(ratX.mu*(ratX.att[f.homeId]??1)*(ratX.def[f.awayId]??1));wts.push(0.7);
-    partsB.push(ratX.mu*(ratX.att[f.awayId]??1)*(ratX.def[f.homeId]??1));wtsB.push(0.7);}
-  if(ratG.mu>0){parts.push(ratG.mu*(ratG.att[f.homeId]??1)*(ratG.def[f.awayId]??1));wts.push(0.3);
-    partsB.push(ratG.mu*(ratG.att[f.awayId]??1)*(ratG.def[f.homeId]??1));wtsB.push(0.3);}
-  const ws=wts.reduce((a,b)=>a+b,0)||1,wsB=wtsB.reduce((a,b)=>a+b,0)||1;
-  let lamA=Math.max(0.1,parts.reduce((s,p,i)=>s+p*wts[i],0)/ws);
-  let lamB=Math.max(0.1,partsB.reduce((s,p,i)=>s+p*wtsB[i],0)/wsB);
+  const chan=(rat,at,df)=>rat.mu>0?rat.mu*(rat.att[at]??1)*(rat.def[df]??1):null;
+  const cov=Math.max(0,Math.min(1,Math.min(A.nXg,B.nXg)/3));   // trust xG only once both sides have a few xG games
+  const wX=0.7*cov;
+  const blend=(at,df)=>{const x=chan(ratX,at,df),g=chan(ratG,at,df);let num=0,den=0;
+    if(x!=null){num+=wX*x;den+=wX;}if(g!=null){num+=(1-wX)*g;den+=(1-wX);}return den>0?num/den:1.2;};
+  let lamA=blend(f.homeId,f.awayId),lamB=blend(f.awayId,f.homeId);
   const homeHost=HOSTS.has((f.homeName||'').toLowerCase()),awayHost=HOSTS.has((f.awayName||'').toLowerCase());
   if(homeHost&&!awayHost){lamA*=1.08;lamB*=0.95;}else if(awayHost&&!homeHost){lamB*=1.08;lamA*=0.95;}
   lamA*=injuryFactor(f.homeId);lamB*=injuryFactor(f.awayId);
+  lamA=Math.max(0.2,Math.min(3.6,lamA));lamB=Math.max(0.2,Math.min(3.6,lamB));   // safety rail: no absurd scorelines
   let pa=0,pd=0,pb=0,o25=0,btts=0;const cells=[];
   for(let i=0;i<9;i++)for(let j=0;j<9;j++){let p=pmf(lamA,i)*pmf(lamB,j)*tau(i,j,lamA,lamB);if(p<0)p=0;
     cells.push({i,j,p});if(i>j)pa+=p;else if(i===j)pd+=p;else pb+=p;if(i+j>2)o25+=p;if(i>0&&j>0)btts+=p;}
   const tot=pa+pd+pb||1;pa/=tot;pd/=tot;pb/=tot;
   const sumc=cells.reduce((s,c)=>s+c.p,0)||1;cells.forEach(c=>c.p/=sumc);o25/=sumc;btts/=sumc;
   cells.sort((x,y)=>y.p-x.p);const best=cells[0],top3=cells.slice(0,3);
-  const cornF=expFor(A,B,'corners',lvl),cornA=expFor(B,A,'corners',lvl);const lamCorners=(cornF||0)+(cornA||0);
-  let cardF=expFor(A,B,'yellows',lvl),cardA=expFor(B,A,'yellows',lvl);let lamCards=(cardF||0)+(cardA||0);let refNote=null;
+  // CORNERS: blend opponent-adjusted history with a shot-volume estimate (corners follow territorial pressure)
+  const cHistF=expFor(A,B,'corners',lvl),cHistA=expFor(B,A,'corners',lvl);
+  const shF=expFor(A,B,'shots',lvl),shA=expFor(B,A,'shots',lvl);
+  const cps=(lvl.corners&&lvl.shots)?lvl.corners/lvl.shots:0.42;
+  const blend2=(a,b,wa)=>{if(a==null&&b==null)return null;if(a==null)return b;if(b==null)return a;return wa*a+(1-wa)*b;};
+  const cF=blend2(cHistF,shF!=null?shF*cps:null,0.6),cA=blend2(cHistA,shA!=null?shA*cps:null,0.6);
+  let lamCorners=(cF||0)+(cA||0);lamCorners=Math.max(3,Math.min(16,lamCorners));
+  // CARDS: scale with fouls, referee strictness, match tightness and knockout stakes
+  let cardF=expFor(A,B,'yellows',lvl),cardA=expFor(B,A,'yellows',lvl);let lamCards=(cardF||0)+(cardA||0);
+  const foulF=expFor(A,B,'fouls',lvl),foulA=expFor(B,A,'fouls',lvl),totFouls=(foulF||0)+(foulA||0),baseFouls=2*(lvl.fouls||0);
+  if(baseFouls>0)lamCards*=Math.max(0.85,Math.min(1.2,totFouls/baseFouls));
+  let refNote=null;
   if(f.referee&&lvl.yellows){const r=refs[refName(f.referee)];const tm=2*lvl.yellows;
     if(r&&tm>0){const factor=r.avg/tm;lamCards*=1+(factor-1)*(r.n/(r.n+2));refNote=`${refName(f.referee)}: ${r.avg.toFixed(1)} yellows/game over ${r.n} match(es)`;}}
+  lamCards*=(0.95+0.12*(1-Math.abs(pa-pb)));   // tight matches see more cards
+  if(/final|round of 16|round of 32|quarter|semi|knockout/i.test(f.round||''))lamCards*=1.08;
+  lamCards=Math.max(1,Math.min(8,lamCards));
   const rf=lvl.yellows?Math.max(0.7,Math.min(1.4,lamCards/(2*lvl.yellows))):1;
   const players={home:squadModel(f.homeId,lamA,rf),away:squadModel(f.awayId,lamB,rf)};
   const od=oddsBy[f.id];let edge=null;
   if(od){const diffs=[[f.homeName,pa-od.pHome],['Draw',pd-od.pDraw],[f.awayName,pb-od.pAway]];diffs.sort((a,b)=>b[1]-a[1]);edge={sel:diffs[0][0],val:diffs[0][1]};}
   const reason=explain(f,A,B,ratX,lamA,lamB,homeHost,awayHost,players);
-  return {f,A,B,lamA,lamB,pa,pd,pb,o25,btts,best,top3,lamCorners,corners:Object.fromEntries(CORNER_LINES.map(l=>[l,over(lamCorners,l)])),
-    lamCards,cards:Object.fromEntries(CARD_LINES.map(l=>[l,over(lamCards,l)])),refNote,od,edge,reason,homeHost,awayHost,players,
+  return {f,A,B,lamA,lamB,pa,pd,pb,o25,btts,best,top3,lamCorners,corners:Object.fromEntries(CORNER_LINES.map(l=>[l,nbOver(lamCorners,l,1.12)])),
+    lamCards,cards:Object.fromEntries(CARD_LINES.map(l=>[l,nbOver(lamCards,l,1.20)])),refNote,od,edge,reason,homeHost,awayHost,players,
     exp:{poss:[expFor(A,B,'poss',lvl),expFor(B,A,'poss',lvl)],xg:[lamA,lamB],shots:[expFor(A,B,'shots',lvl),expFor(B,A,'shots',lvl)],
       sot:[expFor(A,B,'sot',lvl),expFor(B,A,'sot',lvl)],shots_in:[expFor(A,B,'shots_in',lvl),expFor(B,A,'shots_in',lvl)],
       shots_out:[expFor(A,B,'shots_out',lvl),expFor(B,A,'shots_out',lvl)],blocked:[expFor(A,B,'blocked',lvl),expFor(B,A,'blocked',lvl)],
-      corners:[cornF,cornA],offsides:[expFor(A,B,'offsides',lvl),expFor(B,A,'offsides',lvl)],saves:[expFor(A,B,'saves',lvl),expFor(B,A,'saves',lvl)],
+      corners:[cF,cA],offsides:[expFor(A,B,'offsides',lvl),expFor(B,A,'offsides',lvl)],saves:[expFor(A,B,'saves',lvl),expFor(B,A,'saves',lvl)],
       fouls:[expFor(A,B,'fouls',lvl),expFor(B,A,'fouls',lvl)],yellows:[cardF,cardA],passes:[expFor(A,B,'passes',lvl),expFor(B,A,'passes',lvl)],
       pass_pct:[expFor(A,B,'pass_pct',lvl),expFor(B,A,'pass_pct',lvl)]}};
 }
@@ -508,17 +546,31 @@ function explain(f,A,B,ratX,lamA,lamB,homeHost,awayHost,players){
 function buildContext(){
   const profiles={};const ids=new Set();fixtures.forEach(f=>{ids.add(f.homeId);ids.add(f.awayId);});Object.keys(form).forEach(id=>ids.add(+id));
   ids.forEach(id=>profiles[id]=profile(id));const games=pooledGames();
-  return {profiles,ratX:solveRatings(games,'xgf','xga'),ratG:solveRatings(games,'gf','ga'),lvl:baselines(profiles),refs:refMap()};
+  const ratedSet=new Set(Object.keys(form).map(Number));
+  const priors={};Object.keys(form).forEach(id=>priors[+id]=priorFor(form[+id].name));
+  fixtures.forEach(f=>{priors[f.homeId]=priors[f.homeId]||priorFor(f.homeName);priors[f.awayId]=priors[f.awayId]||priorFor(f.awayName);});
+  return {profiles,ratX:solveRatings(games,'xgf','xga',ratedSet,priors),ratG:solveRatings(games,'gf','ga',ratedSet,priors),lvl:baselines(profiles),refs:refMap()};
 }
 function logPrediction(f,p){if(FINISHED.has(f.status))return;
-  predLog[f.id]={ts:Date.now(),ph:p.pa,pd:p.pd,paw:p.pb,si:p.best.i,sj:p.best.j,o25:p.o25,btts:p.btts,home:f.homeName,away:f.awayName};S.save('tl_predlog',predLog);}
-function gradePredictions(){const o={n:0,brier:0,logloss:0,acc:0,csN:0,csHit:0,ouN:0,ouHit:0,bN:0,bHit:0,rows:[]};
+  predLog[f.id]={ts:Date.now(),ph:p.pa,pd:p.pd,paw:p.pb,si:p.best.i,sj:p.best.j,o25:p.o25,btts:p.btts,
+    corn:p.lamCorners,cardsExp:p.lamCards,pCorn95:p.corners[9.5],pCard35:p.cards[3.5],home:f.homeName,away:f.awayName};S.save('tl_predlog',predLog);}
+function gradePredictions(){const o={n:0,brier:0,logloss:0,acc:0,csN:0,csHit:0,ouN:0,ouHit:0,bN:0,bHit:0,
+    cornN:0,cornMAE:0,cornHit:0,cardN:0,cardMAE:0,cardHit:0,rows:[]};
+  const cache=statsCache();
   fixtures.filter(f=>FINISHED.has(f.status)).forEach(f=>{const pr=predLog[f.id];if(!pr||f.hg==null||f.ag==null)return;o.n++;
     const actual=f.hg>f.ag?'h':f.hg<f.ag?'a':'d';const P={h:pr.ph,d:pr.pd,a:pr.paw};
     ['h','d','a'].forEach(k=>{const y=actual===k?1:0;o.brier+=Math.pow((P[k]||0)-y,2);});o.logloss+=-Math.log(Math.max(1e-9,P[actual]||0));
     const pred=(P.h>=P.d&&P.h>=P.a)?'h':(P.d>=P.a?'d':'a');if(pred===actual)o.acc++;
     o.csN++;if(pr.si===f.hg&&pr.sj===f.ag)o.csHit++;o.ouN++;if((pr.o25>=0.5)===((f.hg+f.ag)>2))o.ouHit++;
-    o.bN++;if((pr.btts>=0.5)===(f.hg>0&&f.ag>0))o.bHit++;o.rows.push({f,pr,actual,pred});});
+    o.bN++;if((pr.btts>=0.5)===(f.hg>0&&f.ag>0))o.bHit++;
+    const pair=cache[f.id];
+    if(pair&&pair.length===2){
+      const ac=(pair[0].corners||0)+(pair[1].corners||0);
+      if(ac>0&&pr.corn!=null){o.cornN++;o.cornMAE+=Math.abs(pr.corn-ac);if((pr.pCorn95>=0.5)===(ac>9.5))o.cornHit++;}
+      const ay=(pair[0].yellows||0)+(pair[1].yellows||0);
+      if(pr.cardsExp!=null&&(pair[0].yellows!=null||pair[1].yellows!=null)){o.cardN++;o.cardMAE+=Math.abs(pr.cardsExp-ay);if((pr.pCard35>=0.5)===(ay>3.5))o.cardHit++;}
+    }
+    o.rows.push({f,pr,actual,pred});});
   return o;}
 
 /* ===================== RENDER ===================== */
@@ -586,7 +638,7 @@ function cardHTML(p,live){const f=p.f;
   const liveBit=live?'<span class="live"></span>LIVE · ':'';
   const conf=Math.min(p.A.nXg,p.B.nXg)>=4?'high':Math.min(p.A.nStats,p.B.nStats)>=3?'medium':'low';
   let badge='';
-  if(p.edge&&p.edge.val>=0.03)badge=`<span class="badge">Value · ${esc(p.edge.sel)} +${Math.round(p.edge.val*100)}%</span>`;
+  if(p.edge&&p.edge.val>=0.03&&p.edge.val<=0.20&&conf!=='low')badge=`<span class="badge">Value · ${esc(p.edge.sel)} +${Math.round(p.edge.val*100)}%</span>`;
   else if(p.homeHost||p.awayHost)badge=`<span class="badge alt">Host edge</span>`;
   const top3=p.top3.map(c=>`<b>${c.i}–${c.j}</b> ${pct(c.p)}`).join(' · ');
   let oddsLine='';if(p.od)oddsLine=`<div class="odds"><span>Market: ${esc(f.homeName)} ${pct(p.od.pHome)}</span><span>Draw ${pct(p.od.pDraw)}</span><span>${pct(p.od.pAway)} ${esc(f.awayName)}</span></div>`;
@@ -664,12 +716,20 @@ function renderPlayers(ctx){
     const pls=[...sq.players].sort((a,b)=>(b.rating||0)-(a.rating||0));
     const rows=pls.map(p=>{const out=inj.has(p.id);const fd90=per90(p.foulsDrawn,p.minutes);
       return `<tr><td class="pn">${esc(p.name)}${out?' <span class="p">⚠</span>':''}</td><td>${esc((p.pos||'').slice(0,3))}</td>`+
-        `<td class="num">${p.goals}</td><td class="num">${p.shots}</td><td class="num">${fd90.toFixed(1)}</td>`+
+        `<td class="num">${p.goals}</td><td class="num">${p.assists}</td><td class="num">${p.shots}</td><td class="num">${fd90.toFixed(1)}</td>`+
         `<td class="num">${p.yellows}</td><td class="num">${p.minutes}</td><td class="rt num ${gradeR(p.rating)}">${p.rating==null?'–':p.rating.toFixed(2)}</td></tr>`;}).join('');
     const tn=(form[teamFilter]&&form[teamFilter].name)||sq.name;
     const injline=(injuries[teamFilter]||[]).length?`<div class="note"><b style="color:var(--poor)">Unavailable:</b> ${(injuries[teamFilter]).map(x=>esc(x.name)).join(', ')}</div>`:'';
-    return filterUI+`<div class="note">${esc(tn)} squad — sorted by average match rating (colour-graded). ⚠ = unavailable. <a class="note-link" id="keyLink">Key</a></div>`+injline+
-      `<div class="scroll"><table><thead><tr><th>Player</th><th>Pos</th><th>Gls</th><th>Sh</th><th>FD/90</th><th>Yel</th><th>Min</th><th>Rating</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    // notable players (this season, all competitions)
+    const pk=p=>(p.penScored||0)+(p.penMissed||0);
+    const topOf=fn=>{const a=sq.players.filter(p=>fn(p)>0).sort((x,y)=>fn(y)-fn(x));return a[0];};
+    const tg=topOf(p=>p.goals),ta=topOf(p=>p.assists),tb=topOf(p=>p.yellows),tpk=topOf(pk);
+    const row=(lab,p,val)=>p?`<li><span class="r">●</span><span class="n">${esc(p.name)} <span class="t">${lab}</span></span><span class="v">${val}</span></li>`:'';
+    const notable=`<div class="lead"><h3>Notable players · 2026 season</h3>`+
+      row('top scorer',tg,tg?tg.goals+' G':'')+row('most assists',ta,ta?ta.assists+' A':'')+
+      row('most booked',tb,tb?tb.yellows+' Y':'')+row('penalty taker',tpk,tpk?pk(tpk)+' taken':'')+`</div>`;
+    return filterUI+`<div class="note">${esc(tn)} squad — sorted by average match rating (colour-graded). ⚠ = unavailable. Stats are 2026 season, all competitions. <a class="note-link" id="keyLink">Key</a></div>`+notable+injline+
+      `<div class="scroll"><table><thead><tr><th>Player</th><th>Pos</th><th>Gls</th><th>Ast</th><th>Sh</th><th>FD/90</th><th>Yel</th><th>Min</th><th>Rating</th></tr></thead><tbody>${rows}</tbody></table></div>`;
   }
   const all=allPlayers();
   const board=(title,arr,fmt)=>{if(!arr.length)return '';return `<div class="lead"><h3>${title}</h3>`+arr.map((x,i)=>`<li><span class="r num">${i+1}</span>`+
@@ -695,7 +755,9 @@ function renderAccuracy(){
   const card=(v,l,s)=>`<div class="acc"><div class="v num">${v}</div><div class="l">${l}</div>${s?`<div class="s">${s}</div>`:''}</div>`;
   const grid=`<div class="acc-grid">`+card((g.brier/g.n).toFixed(3),'Brier score','lower better')+card((g.logloss/g.n).toFixed(3),'Log-loss','lower better')+
     card(Math.round(g.acc/g.n*100)+'%','Result called',`${g.acc}/${g.n}`)+card(Math.round(g.csHit/g.csN*100)+'%','Exact score',`${g.csHit}/${g.csN}`)+
-    card(Math.round(g.ouHit/g.ouN*100)+'%','Over/Under 2.5',`${g.ouHit}/${g.ouN}`)+card(Math.round(g.bHit/g.bN*100)+'%','BTTS',`${g.bHit}/${g.bN}`)+`</div>`;
+    card(Math.round(g.ouHit/g.ouN*100)+'%','Over/Under 2.5',`${g.ouHit}/${g.ouN}`)+card(Math.round(g.bHit/g.bN*100)+'%','BTTS',`${g.bHit}/${g.bN}`)+
+    (g.cornN?card('±'+(g.cornMAE/g.cornN).toFixed(1),'Corners error',`${Math.round(g.cornHit/g.cornN*100)}% o9.5 · ${g.cornN} games`):'')+
+    (g.cardN?card('±'+(g.cardMAE/g.cardN).toFixed(1),'Cards error',`${Math.round(g.cardHit/g.cardN*100)}% o3.5 · ${g.cardN} games`):'')+`</div>`;
   const rows=g.rows.sort((a,b)=>(b.f.kickoff||'').localeCompare(a.f.kickoff||'')).slice(0,30).map(r=>{const hit=r.pred===r.actual;const map={h:r.f.homeName,d:'Draw',a:r.f.awayName};
     return `<li><div><div class="teams">${esc(r.f.homeName)} ${esc(r.f.hg)}–${esc(r.f.ag)} ${esc(r.f.awayName)}</div><div class="det">Predicted ${r.pr.si}–${r.pr.sj} · called ${esc(map[r.pred])}</div></div>`+
       `<div class="sc num ${hit?'g':'p'}">${hit?'✓':'✗'}</div></li>`;}).join('');
@@ -757,6 +819,11 @@ function loadDemo(){
   predLog[8010]={ts:0,ph:0.62,pd:0.22,paw:0.16,si:2,sj:0,o25:0.55,btts:0.45,home:'Mexico',away:'Canada'};
   predLog[8011]={ts:0,ph:0.40,pd:0.27,paw:0.33,si:1,sj:1,o25:0.50,btts:0.58,home:'South Korea',away:'France'};
   predLog[8012]={ts:0,ph:0.58,pd:0.24,paw:0.18,si:2,sj:1,o25:0.53,btts:0.52,home:'Brazil',away:'Czechia'};
+  // demo corner/card stats for finished fixtures + matching prediction fields, so Accuracy shows them
+  [[8004,4,6,6,4,2,1],[8010,7,8,7,3,1,2],[8011,1,5,5,6,2,1],[8012,3,2,8,4,1,3]].forEach(([fx,h,a,ch,ca,yh,ya])=>{
+    const mk=(t,c,y)=>{const r={teamId:t,teamName:''};STAT_KEYS.forEach(k=>r[k]=null);r.corners=c;r.yellows=y;return r;};
+    statsWC[fx]=[mk(h,ch,yh),mk(a,ca,ya)];});
+  Object.values(predLog).forEach(pr=>{pr.corn=10.0;pr.cardsExp=3.4;pr.pCorn95=0.55;pr.pCard35=0.45;});
   demoMode=true;S.save('tl_demo',true);S.save('tl_odds',oddsBy);S.save('tl_predlog',predLog);S.save('tl_squads',squads);S.save('tl_injuries',injuries);
   teamFilter=0;dayFilter='all';predSort='date';
   setStatus('Demo loaded — fictional form, real names, synthetic xG, odds, players and accuracy history.');render();
